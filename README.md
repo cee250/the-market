@@ -15,7 +15,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 1** | **Project setup, environment, base UI, DB connection, foundational architecture** | ✅ **Done** |
 | **Phase 2** | **Authentication (roles, secure passwords, sessions, email verification, password reset)** | ✅ **Done** |
 | **Phase 3** | **Vendor registration, password confirmation, Terms & Conditions acceptance** | ✅ **Done** |
-| Phase 4–18 | Vendor payment/deal → hardening | ⏳ Planned |
+| **Phase 4** | **Vendor payment/deal records, payment verification, admin payment interface** | ✅ **Done** |
+| Phase 5–18 | Super Admin vendor management → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -141,6 +142,18 @@ Authentication is backed by bcrypt password hashes and opaque, HttpOnly cookie s
 | POST | `/api/auth/register/vendor` | Creates a VENDOR profile in `PENDING_PAYMENT`, stores terms acceptance, and does not activate the account |
 
 Vendor registrations require a business name, phone, location, matching user-created passwords, and an explicit Terms & Conditions version. The acceptance is stored with timestamp, IP address, and user agent. Vendor activation and subscription start remain reserved for later admin/payment phases.
+
+**API routes (Phase 4):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/payments/packages` | Active package prices from the database |
+| POST | `/api/payments/vendor` | Vendor records a payment/deal for review |
+| GET | `/api/payments/vendor` | Vendor views their own payment records |
+| GET | `/api/payments/admin` | Admin-only payment review queue |
+| POST | `/api/payments/admin/:id/review` | Admin verifies or rejects a pending record |
+
+Payment amounts are snapshotted from the selected package. Verifying a payment moves the vendor to `PENDING_APPROVAL`; it does not activate the vendor or start a subscription.
 
 ## Manual testing (Phase 1)
 

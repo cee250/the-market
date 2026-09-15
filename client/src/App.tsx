@@ -13,6 +13,8 @@ import { OrdersPage } from './pages/OrdersPage';
 import { ProductPage } from './pages/ProductPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { VendorRegistrationPage } from './pages/VendorRegistrationPage';
+import { VendorPaymentPage } from './pages/VendorPaymentPage';
+import { AdminPaymentsPage } from './pages/AdminPaymentsPage';
 
 export default function App() {
   return (
@@ -33,6 +35,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/register/vendor" element={<VendorRegistrationPage />} />
+          <Route path="/vendor/payment" element={<VendorPaymentPage />} />
+          <Route path="/admin/payments" element={<AdminPaymentsPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />
