@@ -15,6 +15,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { VendorRegistrationPage } from './pages/VendorRegistrationPage';
 import { VendorPaymentPage } from './pages/VendorPaymentPage';
 import { AdminPaymentsPage } from './pages/AdminPaymentsPage';
+import { AdminVendorsPage } from './pages/AdminVendorsPage';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/register/vendor" element={<VendorRegistrationPage />} />
           <Route path="/vendor/payment" element={<VendorPaymentPage />} />
           <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+          <Route path="/admin/vendors" element={<AdminVendorsPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />

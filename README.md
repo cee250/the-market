@@ -16,7 +16,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 2** | **Authentication (roles, secure passwords, sessions, email verification, password reset)** | ✅ **Done** |
 | **Phase 3** | **Vendor registration, password confirmation, Terms & Conditions acceptance** | ✅ **Done** |
 | **Phase 4** | **Vendor payment/deal records, payment verification, admin payment interface** | ✅ **Done** |
-| Phase 5–18 | Super Admin vendor management → hardening | ⏳ Planned |
+| **Phase 5** | **Super Admin vendor management: activation, suspension, deactivation, reactivation** | ✅ **Done** |
+| Phase 6–18 | Packages → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -154,6 +155,15 @@ Vendor registrations require a business name, phone, location, matching user-cre
 | POST | `/api/payments/admin/:id/review` | Admin verifies or rejects a pending record |
 
 Payment amounts are snapshotted from the selected package. Verifying a payment moves the vendor to `PENDING_APPROVAL`; it does not activate the vendor or start a subscription.
+
+**API routes (Phase 5):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/vendors/admin` | Admin-only vendor management list |
+| POST | `/api/vendors/admin/:id/action` | Admin-only activate, suspend, deactivate, or reactivate action |
+
+The server validates allowed state transitions and writes every status change to `audit_logs`. Vendors cannot perform these actions themselves.
 
 ## Manual testing (Phase 1)
 
