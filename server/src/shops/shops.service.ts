@@ -3,13 +3,14 @@ import { AuthUser } from '../auth/auth.service';
 import { DatabaseService } from '../database/database.service';
 import { PackagesService } from '../packages/packages.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { ProductsService } from '../products/products.service';
 
 const PLATFORMS = ['whatsapp', 'facebook', 'instagram', 'tiktok', 'x', 'youtube', 'website'] as const;
 type Platform = typeof PLATFORMS[number];
 
 @Injectable()
 export class ShopsService {
-  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly subscriptions: SubscriptionsService) {}
+  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly subscriptions: SubscriptionsService, private readonly products: ProductsService) {}
 
   async dashboard(user: AuthUser) {
     this.assertVendor(user);
@@ -46,10 +47,12 @@ export class ShopsService {
     await this.subscriptions.syncExpiry(vendor.id);
     const current = await this.db.connection('vendor_profiles').where({ id: vendor.id }).first();
     if (current.status !== 'ACTIVE') throw new NotFoundException('Shop not found');
-    return this.toShopDto(current, false);
+    const shop = await this.toShopDto(current, false);
+    shop.products = await this.products.publicForVendor(current.id);
+    return shop;
   }
 
   private async getVendor(userId: string) { const vendor = await this.db.connection('vendor_profiles').where({ user_id: userId }).first(); if (!vendor) throw new NotFoundException('Vendor profile not found'); return vendor; }
   private assertVendor(user: AuthUser) { if (user.role !== 'VENDOR') throw new ForbiddenException('Only vendors can manage shops'); }
-  private async toShopDto(vendor: any, includePrivate: boolean) { const links = await this.db.connection('vendor_social_links').where({ vendor_profile_id: vendor.id }).orderBy('platform', 'asc'); return { id: vendor.id, businessName: vendor.business_name, slug: vendor.slug, description: vendor.description, logoUrl: vendor.logo_url, phone: vendor.phone, location: vendor.location, status: vendor.status, socialLinks: links.map((link) => ({ platform: link.platform, url: link.url })), products: [], ...(includePrivate ? { userId: vendor.user_id } : {}) }; }
+  private async toShopDto(vendor: any, includePrivate: boolean) { const links = await this.db.connection('vendor_social_links').where({ vendor_profile_id: vendor.id }).orderBy('platform', 'asc'); return { id: vendor.id, businessName: vendor.business_name, slug: vendor.slug, description: vendor.description, logoUrl: vendor.logo_url, phone: vendor.phone, location: vendor.location, status: vendor.status, socialLinks: links.map((link) => ({ platform: link.platform, url: link.url })), products: [] as any[], ...(includePrivate ? { userId: vendor.user_id } : {}) }; }
 }

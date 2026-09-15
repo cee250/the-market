@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Knex } from 'knex';
 import { DatabaseService } from '../database/database.service';
+import { AuthUser } from '../auth/auth.service';
 
 export interface SubcategoryDto {
   id: string;
@@ -85,4 +86,39 @@ export class CategoriesService {
     const subMap = await this.loadSubcategories([category.id]);
     return this.toDto(category, subMap.get(category.id) ?? []);
   }
+
+  async createCategory(admin: AuthUser, input: { name: string; description?: string; sortOrder?: number }) {
+    this.assertAdmin(admin);
+    const slug = this.slug(input.name);
+    try {
+      const [row] = await this.db.connection('categories').insert({ name: input.name.trim(), slug, description: input.description?.trim() || null, sort_order: input.sortOrder ?? 0 }).returning('*');
+      return this.toDto(row, []);
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') throw new ConflictException('Category already exists');
+      throw error;
+    }
+  }
+
+  async createSubcategory(admin: AuthUser, categoryId: string, input: { name: string; sortOrder?: number }) {
+    this.assertAdmin(admin);
+    const category = await this.db.connection('categories').where({ id: categoryId }).first();
+    if (!category) throw new NotFoundException('Category not found');
+    try {
+      const [row] = await this.db.connection('subcategories').insert({ category_id: categoryId, name: input.name.trim(), slug: this.slug(input.name), sort_order: input.sortOrder ?? 0 }).returning('*');
+      return { id: row.id, name: row.name, slug: row.slug, categoryId };
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') throw new ConflictException('Subcategory already exists');
+      throw error;
+    }
+  }
+
+  async setCategoryActive(admin: AuthUser, id: string, isActive: boolean) {
+    this.assertAdmin(admin);
+    const updated = await this.db.connection('categories').where({ id }).update({ is_active: isActive, updated_at: this.db.connection.fn.now() });
+    if (!updated) throw new NotFoundException('Category not found');
+    return { id, isActive };
+  }
+
+  private assertAdmin(user: AuthUser) { if (user.role !== 'ADMIN') throw new ForbiddenException('Only admins can manage categories'); }
+  private slug(value: string) { return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 }

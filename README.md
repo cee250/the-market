@@ -20,7 +20,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 6** | **Packages, product limits, vendor entitlements** | ✅ **Done** |
 | **Phase 7** | **Subscription system: start/end dates, renewal history, countdown, expiration** | ✅ **Done** |
 | **Phase 8** | **Vendor dashboard, vendor shop, profile, social links** | ✅ **Done** |
-| Phase 9–18 | Product management → hardening | ⏳ Planned |
+| **Phase 9** | **Product management, categories, product limits, publishing** | ✅ **Done** |
+| Phase 10–18 | Product media and variants → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -198,6 +199,19 @@ Admin activation starts the subscription clock. The API calculates `ACTIVE`, `EX
 | GET | `/api/shops/public/:slug` | Public active-shop profile; hidden for restricted statuses |
 
 Shop edits are server-authorized and audited. Social links are normalized into their own table. Public shops currently return an empty product list because product CRUD begins in Phase 9.
+
+**API routes (Phase 9):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/products/mine` | Vendor-owned product list |
+| POST | `/api/products` | Create a draft product |
+| PATCH | `/api/products/:id` | Edit an owned product |
+| DELETE | `/api/products/:id` | Delete an owned product |
+| POST | `/api/products/:id/publish` | Publish or unpublish with entitlement enforcement |
+| POST | `/api/categories/admin` | Admin category creation |
+
+Publishing requires an active vendor, an active subscription entitlement, and available product capacity. Public shops now expose only `PUBLISHED` products; drafts remain private to their vendor.
 
 ## Manual testing (Phase 1)
 
