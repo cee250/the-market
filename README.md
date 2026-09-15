@@ -23,7 +23,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 9** | **Product management, categories, product limits, publishing** | ✅ **Done** |
 | **Phase 10** | **Product media, SKU, variants, availability, editing improvements** | ✅ **Done** |
 | **Phase 11** | **Simple inventory, stock movements, sales, stock balance** | ✅ **Done** |
-| Phase 12–18 | Cart and checkout → hardening | ⏳ Planned |
+| **Phase 12** | **Cart, multi-vendor checkout, orders, stock reservation** | ✅ **Done** |
+| Phase 13–18 | Payments, fulfillment, search → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -245,6 +246,19 @@ Product-level SKUs are unique per vendor, variant SKUs are unique per product, a
 | GET | `/api/inventory/:id/movements` | View the append-only movement history |
 
 Remaining stock is calculated as opening quantity plus additions and adjustments minus sales. Stock operations use a database transaction and row lock to prevent lost updates or negative balances.
+
+**API routes (Phase 12):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/cart` | Authenticated customer's persisted cart |
+| POST | `/api/cart/items` | Add a published product or variant |
+| PATCH | `/api/cart/items/:id` | Change quantity |
+| DELETE | `/api/cart/items/:id` | Remove a cart item |
+| POST | `/api/checkout` | Create one order with vendor sub-orders |
+| GET | `/api/orders` | Customer order history |
+
+Checkout snapshots prices and selected options, groups items into vendor-specific sub-orders, clears the cart, and reserves matching inventory inside the same database transaction. Inventory reservation uses row locks and rejects insufficient stock.
 
 ## Manual testing (Phase 1)
 

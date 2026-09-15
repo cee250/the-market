@@ -11,6 +11,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { ShopsModule } from './shops/shops.module';
 import { ProductsModule } from './products/products.module';
 import { InventoryModule } from './inventory/inventory.module';
+import { OrdersModule } from './orders/orders.module';
 import { VendorsModule } from './vendors/vendors.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { VendorsModule } from './vendors/vendors.module';
     ShopsModule,
     ProductsModule,
     InventoryModule,
+    OrdersModule,
     VendorsModule,
   ],
 })
