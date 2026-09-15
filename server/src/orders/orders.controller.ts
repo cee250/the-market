@@ -9,6 +9,7 @@ type RequestWithUser = Request & { user: AuthUser };
 class CartItemDto { @IsString() productId!: string; @IsInt() @Min(1) quantity!: number; @IsOptional() @IsString() variantId?: string; @IsOptional() selectedOptions?: Record<string, unknown>; }
 class QuantityDto { @IsInt() @Min(1) quantity!: number; }
 class CheckoutDto { @IsString() @MinLength(2) customerName!: string; @IsString() @MinLength(5) phone!: string; @IsEmail() email!: string; @IsString() @MinLength(3) deliveryAddress!: string; @IsIn(['DELIVERY', 'PICKUP']) fulfillmentMethod!: 'DELIVERY' | 'PICKUP'; @IsString() @MinLength(2) paymentMethod!: string; }
+class FulfillmentStatusDto { @IsString() status!: string; }
 
 @Controller()
 @UseGuards(AuthGuard)
@@ -20,4 +21,7 @@ export class OrdersController {
   @Delete('cart/items/:id') remove(@Req() request: RequestWithUser, @Param('id') id: string) { return this.orders.remove(request.user, id); }
   @Post('checkout') checkout(@Req() request: RequestWithUser, @Body() body: CheckoutDto) { return this.orders.checkout(request.user, body); }
   @Get('orders') listOrders(@Req() request: RequestWithUser) { return this.orders.orders(request.user); }
+  @Get('vendor-orders') vendorOrders(@Req() request: RequestWithUser) { return this.orders.vendorOrders(request.user); }
+  @Patch('vendor-orders/:id/status') updateVendorOrderStatus(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: FulfillmentStatusDto) { return this.orders.updateVendorOrderStatus(request.user, id, body.status); }
+  @Get('admin/orders') adminOrders(@Req() request: RequestWithUser) { return this.orders.adminOrders(request.user); }
 }

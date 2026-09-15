@@ -1,0 +1,4 @@
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+export interface VendorOrder { id: string; order_number: string; customer_name: string; phone: string; email: string; delivery_address: string; fulfillment_method: string; status: string; items: { product_name: string; quantity: number; unit_price: number; subtotal: number }[] }
+async function request<T>(path: string, init?: RequestInit): Promise<T> { const response = await fetch(`${API_URL}/api${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) } }); if (!response.ok) throw new Error('The fulfillment request could not be completed'); return response.json() as Promise<T>; }
+export const fulfillmentApi = { list: () => request<VendorOrder[]>('/vendor-orders'), status: (id: string, status: string) => request<VendorOrder>(`/vendor-orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }) };

@@ -25,7 +25,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 11** | **Simple inventory, stock movements, sales, stock balance** | ✅ **Done** |
 | **Phase 12** | **Cart, multi-vendor checkout, orders, stock reservation** | ✅ **Done** |
 | **Phase 13** | **Provider-agnostic marketplace payments and verification** | ✅ **Done** |
-| Phase 14–18 | Fulfillment, search → hardening | ⏳ Planned |
+| **Phase 14** | **Fulfillment, vendor-order isolation, delivery details** | ✅ **Done** |
+| Phase 15–18 | Search → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -269,6 +270,16 @@ Checkout snapshots prices and selected options, groups items into vendor-specifi
 | POST | `/api/payments/orders/:paymentId/verify` | Admin verifies or rejects provider status |
 
 Marketplace payments store provider, provider reference, amount, currency, status, verification actor, and failure details independently from vendor subscription payments. The server controls the order transition to `PAID` or `CANCELLED`; frontend payment status is never trusted.
+
+**API routes (Phase 14):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/vendor-orders` | Vendor-only sub-orders belonging to the current vendor |
+| PATCH | `/api/vendor-orders/:id/status` | Vendor fulfillment status transition |
+| GET | `/api/admin/orders` | Admin-only complete order view |
+
+Vendor fulfillment is isolated at the `vendor_profile_id` boundary. Delivery orders retain address, phone, fulfillment method, province, district, sector, and instruction fields for future delivery expansion.
 
 ## Manual testing (Phase 1)
 
