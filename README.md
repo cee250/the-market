@@ -27,7 +27,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 13** | **Provider-agnostic marketplace payments and verification** | ✅ **Done** |
 | **Phase 14** | **Fulfillment, vendor-order isolation, delivery details** | ✅ **Done** |
 | **Phase 15** | **Marketplace browsing, search, filters, sorting, product details** | ✅ **Done** |
-| Phase 16–18 | Hardening and platform operations | ⏳ Planned |
+| **Phase 16** | **Platform operations, audit visibility, strict validation hardening** | ✅ **Done** |
+| Phase 17–18 | Final hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -290,6 +291,15 @@ Vendor fulfillment is isolated at the `vendor_profile_id` boundary. Delivery ord
 | GET | `/api/marketplace/products/:slug` | Public published-product detail |
 
 Marketplace search supports text search across product, description, and vendor name, plus category, vendor, location, condition, price range, newest, and price sorting. Only products from active vendors with `PUBLISHED` status are returned.
+
+**API routes (Phase 16):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/admin/stats` | Admin-only platform counts and paid revenue |
+| GET | `/api/admin/audit-logs` | Admin-only paginated audit activity |
+
+Global DTO validation now rejects non-whitelisted request fields instead of silently discarding them. The admin operations page exposes platform counts and recent audit activity without exposing sensitive credentials or payment secrets.
 
 ## Manual testing (Phase 1)
 
