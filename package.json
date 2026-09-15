@@ -1,0 +1,20 @@
+{
+  "name": "market",
+  "private": true,
+  "version": "0.2.0",
+  "description": "Market — multi-vendor e-commerce marketplace (monorepo: client storefront + NestJS API)",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev -w client",
+    "dev:server": "npm run dev -w server",
+    "db:start": "npm run db:start -w server",
+    "build": "npm run build -w client && npm run build -w server",
+    "typecheck": "npm run typecheck -w client && npm run typecheck -w server"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}
