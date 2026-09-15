@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BadgeCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { packagesApi, type Entitlement } from '../services/packages';
+
+export function VendorEntitlementPage() {
+  const { user } = useAuth(); const [entitlement, setEntitlement] = useState<Entitlement | null>(null); const [error, setError] = useState('');
+  useEffect(() => { if (user?.role === 'VENDOR') void packagesApi.entitlement().then(setEntitlement).catch((err) => setError(err instanceof Error ? err.message : 'Unable to load entitlement')); }, [user?.role]);
+  if (!user || user.role !== 'VENDOR') return <div className="mx-auto max-w-xl px-4 py-16 text-center"><h1 className="text-xl font-bold">Vendor access required</h1><Link to="/login" className="mt-4 inline-block font-semibold text-emerald-700">Sign in</Link></div>;
+  return <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6"><div className="rounded-2xl border border-slate-100 bg-white p-7 shadow-sm"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-600 text-white"><BadgeCheck size={22} /></span><h1 className="mt-4 text-xl font-extrabold text-slate-900">Vendor entitlement</h1>{error && <p className="mt-4 text-sm text-rose-600">{error}</p>}{!error && !entitlement && <p className="mt-4 text-sm text-slate-500">No active package entitlement yet. A verified payment and admin activation are required.</p>}{entitlement && <div className="mt-6 grid gap-4 sm:grid-cols-2"><div className="rounded-lg bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-500">Package</p><p className="mt-1 text-lg font-bold text-slate-900">{entitlement.packageName}</p></div><div className="rounded-lg bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-500">Status</p><p className="mt-1 text-lg font-bold text-emerald-700">{entitlement.status}</p></div><div className="rounded-lg bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-500">Published product limit</p><p className="mt-1 text-lg font-bold text-slate-900">{entitlement.productLimit}</p></div><div className="rounded-lg bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-500">Package duration</p><p className="mt-1 text-lg font-bold text-slate-900">{entitlement.durationDays} days</p></div></div>}</div></div>;
+}

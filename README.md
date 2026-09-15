@@ -17,7 +17,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 3** | **Vendor registration, password confirmation, Terms & Conditions acceptance** | ✅ **Done** |
 | **Phase 4** | **Vendor payment/deal records, payment verification, admin payment interface** | ✅ **Done** |
 | **Phase 5** | **Super Admin vendor management: activation, suspension, deactivation, reactivation** | ✅ **Done** |
-| Phase 6–18 | Packages → hardening | ⏳ Planned |
+| **Phase 6** | **Packages, product limits, vendor entitlements** | ✅ **Done** |
+| Phase 7–18 | Subscription system → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -164,6 +165,17 @@ Payment amounts are snapshotted from the selected package. Verifying a payment m
 | POST | `/api/vendors/admin/:id/action` | Admin-only activate, suspend, deactivate, or reactivate action |
 
 The server validates allowed state transitions and writes every status change to `audit_logs`. Vendors cannot perform these actions themselves.
+
+**API routes (Phase 6):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/packages/admin` | Admin-only package list |
+| POST | `/api/packages/admin` | Admin-only package creation |
+| PATCH | `/api/packages/admin/:id` | Admin-only package editing/activation |
+| GET | `/api/packages/vendor/entitlement` | Vendor's effective package entitlement |
+
+Vendor activation now requires a verified payment and grants a `vendor_entitlements` record containing the package's product limit. Deactivation revokes the entitlement. The server-side `PackagesService.assertCanPublishProduct(...)` helper rejects publishing beyond the entitlement limit; product publishing will consume this seam in the product phase.
 
 ## Manual testing (Phase 1)
 
