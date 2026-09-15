@@ -24,7 +24,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 10** | **Product media, SKU, variants, availability, editing improvements** | ✅ **Done** |
 | **Phase 11** | **Simple inventory, stock movements, sales, stock balance** | ✅ **Done** |
 | **Phase 12** | **Cart, multi-vendor checkout, orders, stock reservation** | ✅ **Done** |
-| Phase 13–18 | Payments, fulfillment, search → hardening | ⏳ Planned |
+| **Phase 13** | **Provider-agnostic marketplace payments and verification** | ✅ **Done** |
+| Phase 14–18 | Fulfillment, search → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -259,6 +260,15 @@ Remaining stock is calculated as opening quantity plus additions and adjustments
 | GET | `/api/orders` | Customer order history |
 
 Checkout snapshots prices and selected options, groups items into vendor-specific sub-orders, clears the cart, and reserves matching inventory inside the same database transaction. Inventory reservation uses row locks and rejects insufficient stock.
+
+**API routes (Phase 13):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| POST | `/api/payments/orders/:id/intent` | Customer creates an order payment intent |
+| POST | `/api/payments/orders/:paymentId/verify` | Admin verifies or rejects provider status |
+
+Marketplace payments store provider, provider reference, amount, currency, status, verification actor, and failure details independently from vendor subscription payments. The server controls the order transition to `PAID` or `CANCELLED`; frontend payment status is never trusted.
 
 ## Manual testing (Phase 1)
 

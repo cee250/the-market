@@ -33,6 +33,8 @@ class ReviewPaymentDto {
   @IsString()
   reviewNote?: string;
 }
+class OrderPaymentDto { @IsString() @MinLength(2) provider!: string; }
+class VerifyOrderPaymentDto { @IsIn(['PAID', 'FAILED']) status!: 'PAID' | 'FAILED'; @IsOptional() @IsString() providerReference?: string; @IsOptional() @IsString() failureReason?: string; }
 
 @Controller('payments')
 @UseGuards(AuthGuard, RolesGuard)
@@ -69,4 +71,12 @@ export class PaymentsController {
   review(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: ReviewPaymentDto) {
     return this.payments.reviewPayment(request.user, id, body.decision, body.reviewNote);
   }
+
+  @Post('orders/:id/intent')
+  @Roles('CUSTOMER')
+  createOrderIntent(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: OrderPaymentDto) { return this.payments.createOrderPayment(request.user, id, body.provider); }
+
+  @Post('orders/:id/verify')
+  @Roles('ADMIN')
+  verifyOrder(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: VerifyOrderPaymentDto) { return this.payments.verifyOrderPayment(request.user, id, body.status, body.providerReference, body.failureReason); }
 }

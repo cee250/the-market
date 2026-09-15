@@ -74,6 +74,26 @@ export class PaymentsService {
     return this.toPaymentDto(updated);
   }
 
+  async createOrderPayment(user: AuthUser, orderId: string, provider: string) {
+    const order = await this.db.connection('orders').where({ id: orderId, user_id: user.id }).first();
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== 'PENDING_PAYMENT') throw new BadRequestException('Order is not awaiting payment');
+    const [payment] = await this.db.connection('order_payments').insert({ order_id: order.id, amount: order.total, currency: order.currency, provider: provider.trim(), status: 'PENDING' }).returning('*');
+    return payment;
+  }
+
+  async verifyOrderPayment(admin: AuthUser, paymentId: string, status: 'PAID' | 'FAILED', providerReference?: string, failureReason?: string) {
+    if (admin.role !== 'ADMIN') throw new ForbiddenException('Only admins can verify marketplace payments');
+    const payment = await this.db.connection('order_payments').where({ id: paymentId }).first();
+    if (!payment) throw new NotFoundException('Order payment not found');
+    if (payment.status !== 'PENDING') throw new BadRequestException('Order payment has already been resolved');
+    await this.db.tx(async (trx) => {
+      await trx('order_payments').where({ id: paymentId }).update({ status, provider_reference: providerReference?.trim() || null, failure_reason: failureReason?.trim() || null, verified_by: admin.id, verified_at: trx.fn.now(), updated_at: trx.fn.now() });
+      await trx('orders').where({ id: payment.order_id }).update({ status: status === 'PAID' ? 'PAID' : 'CANCELLED', updated_at: trx.fn.now() });
+    });
+    return this.db.connection('order_payments').where({ id: paymentId }).first();
+  }
+
   private toPaymentDto(row: any) {
     return { id: row.id, vendorName: row.vendor_name, vendorEmail: row.vendor_email, businessName: row.business_name, vendorStatus: row.vendor_status, packageName: row.package_name, packageId: row.package_id, amount: row.amount, currency: row.currency, paymentMethod: row.payment_method, reference: row.reference, notes: row.notes, status: row.status, submittedAt: row.submitted_at, reviewedAt: row.reviewed_at, reviewerName: row.reviewer_name, reviewNote: row.review_note };
   }
