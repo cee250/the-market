@@ -19,7 +19,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 5** | **Super Admin vendor management: activation, suspension, deactivation, reactivation** | ✅ **Done** |
 | **Phase 6** | **Packages, product limits, vendor entitlements** | ✅ **Done** |
 | **Phase 7** | **Subscription system: start/end dates, renewal history, countdown, expiration** | ✅ **Done** |
-| Phase 8–18 | Vendor dashboard → hardening | ⏳ Planned |
+| **Phase 8** | **Vendor dashboard, vendor shop, profile, social links** | ✅ **Done** |
+| Phase 9–18 | Product management → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -186,6 +187,17 @@ Vendor activation now requires a verified payment and grants a `vendor_entitleme
 | GET | `/api/subscriptions/admin` | Admin subscription overview |
 
 Admin activation starts the subscription clock. The API calculates `ACTIVE`, `EXPIRING_SOON`, or `EXPIRED` from the stored end date and synchronizes an expired vendor to `EXPIRED` without deleting products or entitlements. The frontend countdown is display-only and is seeded from API-provided remaining seconds.
+
+**API routes (Phase 8):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/shops/dashboard` | Authenticated vendor dashboard summary |
+| GET | `/api/shops/me` | Authenticated vendor shop profile |
+| PATCH | `/api/shops/me` | Vendor-owned shop and social-link updates |
+| GET | `/api/shops/public/:slug` | Public active-shop profile; hidden for restricted statuses |
+
+Shop edits are server-authorized and audited. Social links are normalized into their own table. Public shops currently return an empty product list because product CRUD begins in Phase 9.
 
 ## Manual testing (Phase 1)
 

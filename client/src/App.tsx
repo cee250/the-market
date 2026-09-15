@@ -19,6 +19,9 @@ import { AdminVendorsPage } from './pages/AdminVendorsPage';
 import { AdminPackagesPage } from './pages/AdminPackagesPage';
 import { VendorEntitlementPage } from './pages/VendorEntitlementPage';
 import { VendorSubscriptionPage } from './pages/VendorSubscriptionPage';
+import { VendorDashboardPage } from './pages/VendorDashboardPage';
+import { VendorShopPage } from './pages/VendorShopPage';
+import { PublicShopPage } from './pages/PublicShopPage';
 
 export default function App() {
   return (
@@ -45,6 +48,9 @@ export default function App() {
           <Route path="/admin/packages" element={<AdminPackagesPage />} />
           <Route path="/vendor/entitlement" element={<VendorEntitlementPage />} />
           <Route path="/vendor/subscription" element={<VendorSubscriptionPage />} />
+          <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
+          <Route path="/vendor/shop" element={<VendorShopPage />} />
+          <Route path="/shop/:slug" element={<PublicShopPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />
