@@ -1,0 +1,106 @@
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { api } from '../../services/api';
+import { useClickOutside } from '../../hooks/useClickOutside';
+import { formatPrice } from '../../lib/utils';
+
+interface SearchBarProps {
+  autoFocus?: boolean;
+  onNavigate?: () => void;
+  className?: string;
+}
+
+/** Search input with live product suggestions. */
+export function SearchBar({ autoFocus, onNavigate, className }: SearchBarProps) {
+  const [q, setQ] = useState('');
+  const [focused, setFocused] = useState(false);
+  const navigate = useNavigate();
+  const ref = useClickOutside<HTMLDivElement>(() => setFocused(false));
+
+  const suggestions = useMemo(() => api.suggest(q, 6), [q]);
+  const open = focused && q.trim().length >= 2;
+
+  const submit = (target: string | null) => {
+    setFocused(false);
+    if (target) {
+      onNavigate?.();
+    } else if (q.trim()) {
+      navigate(`/search?q=${encodeURIComponent(q.trim())}`);
+      onNavigate?.();
+    }
+  };
+
+  return (
+    <div ref={ref} className={className}>
+      <div className="relative">
+        <Search
+          size={16}
+          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <input
+          type="search"
+          value={q}
+          autoFocus={autoFocus}
+          onChange={(e) => setQ(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit(null);
+            if (e.key === 'Escape') setFocused(false);
+          }}
+          placeholder="Search products, brands and more…"
+          aria-label="Search products"
+          className="w-full rounded-full border border-transparent bg-slate-100 py-2.5 pl-11 pr-4 text-sm text-slate-800 placeholder:text-slate-400 transition focus:border-emerald-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        />
+      </div>
+
+      {open && (
+        <div className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-slate-100 bg-white shadow-xl animate-fade-in">
+          {suggestions.length === 0 ? (
+            <p className="px-4 py-4 text-sm text-slate-500">
+              No matches for “{q.trim()}” yet — press Enter to search everything.
+            </p>
+          ) : (
+            <ul>
+              {suggestions.map((p) => (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(`/product/${p.id}`);
+                      setQ('');
+                      submit(p.id);
+                    }}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
+                  >
+                    <img
+                      src={p.image}
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-lg bg-slate-100 object-cover"
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-slate-800">
+                        {p.name}
+                      </span>
+                      <span className="block text-xs text-slate-400">{p.categoryName}</span>
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900">
+                      {formatPrice(p.price)}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            onClick={() => submit(null)}
+            className="block w-full border-t border-slate-100 bg-slate-50 px-4 py-2.5 text-center text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            See all results for “{q.trim()}”
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

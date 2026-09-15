@@ -1,0 +1,24 @@
+# Development Postgres for local setups that prefer Docker over the
+# embedded instance (npm run db:start -w server). Either works — the API
+# only consumes DATABASE_URL.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: market-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: market
+      POSTGRES_PASSWORD: market
+      POSTGRES_DB: market
+    ports:
+      - "5432:5432"
+    volumes:
+      - market_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U market"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  market_pgdata:
