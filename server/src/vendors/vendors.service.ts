@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { AuthUser } from '../auth/auth.service';
 import { DatabaseService } from '../database/database.service';
 import { PackagesService } from '../packages/packages.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 type VendorStatus = 'PENDING_PAYMENT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SUSPENDED' | 'DEACTIVATED';
 type VendorAction = 'ACTIVATE' | 'SUSPEND' | 'DEACTIVATE' | 'REACTIVATE';
@@ -15,7 +16,7 @@ const transitions: Record<VendorAction, { from: VendorStatus[]; to: VendorStatus
 
 @Injectable()
 export class VendorsService {
-  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService) {}
+  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly subscriptions: SubscriptionsService) {}
 
   async listVendors(admin: AuthUser) {
     this.assertAdmin(admin);
@@ -40,6 +41,7 @@ export class VendorsService {
     await this.db.tx(async (trx) => {
       await trx('vendor_profiles').where({ id: vendorId }).update({ status: rule.to, updated_at: trx.fn.now() });
       if (rule.to === 'ACTIVE') await this.packages.activateEntitlement(trx, vendorId, admin.id);
+      if (rule.to === 'ACTIVE') await this.subscriptions.activateForVendor(trx, vendorId, admin.id);
       if (rule.to === 'DEACTIVATED') await this.packages.deactivateEntitlement(trx, vendorId, admin.id);
       await trx('audit_logs').insert({ actor_id: admin.id, action: `VENDOR_${action}`, entity: 'vendor_profile', entity_id: vendorId, metadata: { from: vendor.status, to: rule.to, note: note?.trim() || null } });
     });

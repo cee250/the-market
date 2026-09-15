@@ -18,7 +18,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 4** | **Vendor payment/deal records, payment verification, admin payment interface** | ✅ **Done** |
 | **Phase 5** | **Super Admin vendor management: activation, suspension, deactivation, reactivation** | ✅ **Done** |
 | **Phase 6** | **Packages, product limits, vendor entitlements** | ✅ **Done** |
-| Phase 7–18 | Subscription system → hardening | ⏳ Planned |
+| **Phase 7** | **Subscription system: start/end dates, renewal history, countdown, expiration** | ✅ **Done** |
+| Phase 8–18 | Vendor dashboard → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -176,6 +177,15 @@ The server validates allowed state transitions and writes every status change to
 | GET | `/api/packages/vendor/entitlement` | Vendor's effective package entitlement |
 
 Vendor activation now requires a verified payment and grants a `vendor_entitlements` record containing the package's product limit. Deactivation revokes the entitlement. The server-side `PackagesService.assertCanPublishProduct(...)` helper rejects publishing beyond the entitlement limit; product publishing will consume this seam in the product phase.
+
+**API routes (Phase 7):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/subscriptions/vendor` | Backend-authoritative subscription and renewal history |
+| GET | `/api/subscriptions/admin` | Admin subscription overview |
+
+Admin activation starts the subscription clock. The API calculates `ACTIVE`, `EXPIRING_SOON`, or `EXPIRED` from the stored end date and synchronizes an expired vendor to `EXPIRED` without deleting products or entitlements. The frontend countdown is display-only and is seeded from API-provided remaining seconds.
 
 ## Manual testing (Phase 1)
 

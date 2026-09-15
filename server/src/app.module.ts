@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { HealthModule } from './health/health.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PackagesModule } from './packages/packages.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { VendorsModule } from './vendors/vendors.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { VendorsModule } from './vendors/vendors.module';
     CategoriesModule,
     PaymentsModule,
     PackagesModule,
+    SubscriptionsModule,
     VendorsModule,
   ],
 })
