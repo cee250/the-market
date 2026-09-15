@@ -14,7 +14,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | Frontend (pre-spec) | Full storefront SPA | ✅ Done |
 | **Phase 1** | **Project setup, environment, base UI, DB connection, foundational architecture** | ✅ **Done** |
 | **Phase 2** | **Authentication (roles, secure passwords, sessions, email verification, password reset)** | ✅ **Done** |
-| Phase 3–18 | Vendor registration → payments → hardening | ⏳ Planned |
+| **Phase 3** | **Vendor registration, password confirmation, Terms & Conditions acceptance** | ✅ **Done** |
+| Phase 4–18 | Vendor payment/deal → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -132,6 +133,14 @@ Authentication is backed by bcrypt password hashes and opaque, HttpOnly cookie s
 | POST | `/api/auth/verify-email` | Consumes a one-time verification token |
 | POST | `/api/auth/password-reset/request` | Generic response to prevent email enumeration |
 | POST | `/api/auth/password-reset/confirm` | Consumes a one-time reset token and revokes sessions |
+
+**API routes (Phase 3):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| POST | `/api/auth/register/vendor` | Creates a VENDOR profile in `PENDING_PAYMENT`, stores terms acceptance, and does not activate the account |
+
+Vendor registrations require a business name, phone, location, matching user-created passwords, and an explicit Terms & Conditions version. The acceptance is stored with timestamp, IP address, and user agent. Vendor activation and subscription start remain reserved for later admin/payment phases.
 
 ## Manual testing (Phase 1)
 

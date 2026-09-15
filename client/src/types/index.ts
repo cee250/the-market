@@ -55,6 +55,7 @@ export interface User {
   email: string;
   role?: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
   emailVerified?: boolean;
+  vendorStatus?: 'PENDING_PAYMENT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SUSPENDED' | 'DEACTIVATED';
 }
 
 export interface OrderItem {

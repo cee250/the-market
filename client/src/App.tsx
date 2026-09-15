@@ -12,6 +12,7 @@ import { OrderSuccessPage } from './pages/OrderSuccessPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { ProductPage } from './pages/ProductPage';
 import { WishlistPage } from './pages/WishlistPage';
+import { VendorRegistrationPage } from './pages/VendorRegistrationPage';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/compare" element={<ComparePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register/vendor" element={<VendorRegistrationPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />

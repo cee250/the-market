@@ -29,6 +29,12 @@ export const authApi = {
       body: JSON.stringify({ name, email, password }),
     });
   },
+  registerVendor(input: { name: string; businessName: string; email: string; phone: string; location: string; password: string; confirmPassword: string; termsVersion: string }) {
+    return request<AuthResponse>('/auth/register/vendor', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
   login(email: string, password: string) {
     return request<AuthResponse>('/auth/login', {
       method: 'POST',

@@ -95,6 +95,7 @@ export function RegisterPage() {
       <button disabled={busy} type="submit" className="w-full rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60">{busy ? 'Creating account…' : 'Create account'}</button>
     </form>
     <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-sm text-slate-500"><ShoppingBag size={14} className="text-emerald-600" />Already have an account? <Link to={`/login?redirect=${encodeURIComponent(redirect)}`} className="font-semibold text-emerald-700 hover:underline">Sign in</Link></p>
+    <p className="mt-3 text-center text-sm text-slate-500">Want to sell on Market? <Link to="/register/vendor" className="font-semibold text-emerald-700 hover:underline">Register as a vendor</Link></p>
   </AuthShell>;
 }
 

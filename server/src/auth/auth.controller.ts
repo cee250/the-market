@@ -35,6 +35,39 @@ class LoginDto {
   password!: string;
 }
 
+class VendorRegisterDto {
+  @IsString()
+  @MinLength(2)
+  name!: string;
+
+  @IsString()
+  @MinLength(2)
+  businessName!: string;
+
+  @IsEmail()
+  email!: string;
+
+  @IsString()
+  @MinLength(3)
+  phone!: string;
+
+  @IsString()
+  @MinLength(2)
+  location!: string;
+
+  @IsString()
+  @MinLength(8)
+  password!: string;
+
+  @IsString()
+  @MinLength(8)
+  confirmPassword!: string;
+
+  @IsString()
+  @MinLength(1)
+  termsVersion!: string;
+}
+
 class VerifyEmailDto {
   @IsString()
   @MinLength(20)
@@ -73,6 +106,13 @@ export class AuthController {
     const result = await this.auth.login(body.email, body.password, request);
     response.setHeader('Set-Cookie', result.cookie);
     return { user: result.user };
+  }
+
+  @Post('register/vendor')
+  async registerVendor(@Body() body: VendorRegisterDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
+    const result = await this.auth.registerVendor(body, request);
+    response.setHeader('Set-Cookie', result.cookie);
+    return { user: result.user, verificationToken: result.verificationToken };
   }
 
   @Post('logout')

@@ -23,6 +23,7 @@ export interface AuthUser {
   email: string;
   role: Role;
   emailVerified: boolean;
+  vendorStatus?: 'PENDING_PAYMENT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' | 'SUSPENDED' | 'DEACTIVATED';
 }
 
 interface UserRow {
@@ -33,6 +34,7 @@ interface UserRow {
   role: Role;
   is_active: boolean;
   email_verified_at: Date | string | null;
+  vendor_status?: AuthUser['vendorStatus'];
 }
 
 interface TokenResult {
@@ -72,11 +74,16 @@ export class AuthService {
       email: row.email,
       role: row.role,
       emailVerified: Boolean(row.email_verified_at),
+      vendorStatus: row.vendor_status,
     };
   }
 
   private async findByEmail(email: string): Promise<UserRow | undefined> {
-    return (await this.db.connection('users').where({ email: this.normalizeEmail(email) }).first()) as
+    return (await this.db.connection('users as u')
+      .leftJoin('vendor_profiles as vp', 'vp.user_id', 'u.id')
+      .where({ 'u.email': this.normalizeEmail(email) })
+      .select('u.*', 'vp.status as vendor_status')
+      .first()) as
       | UserRow
       | undefined;
   }
@@ -126,6 +133,42 @@ export class AuthService {
     };
   }
 
+  async registerVendor(input: {
+    name: string;
+    businessName: string;
+    email: string;
+    phone: string;
+    location: string;
+    password: string;
+    confirmPassword: string;
+    termsVersion: string;
+  }, request?: Request) {
+    const normalizedEmail = this.normalizeEmail(input.email);
+    if (input.name.trim().length < 2 || input.businessName.trim().length < 2 || !/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      throw new BadRequestException('Name, business name, and a valid email are required');
+    }
+    if (!input.phone.trim() || !input.location.trim()) throw new BadRequestException('Phone and location are required');
+    if (input.password.length < 8) throw new BadRequestException('Password must be at least 8 characters');
+    if (input.password !== input.confirmPassword) throw new BadRequestException('Passwords do not match');
+    if (!input.termsVersion?.trim()) throw new BadRequestException('Terms & Conditions acceptance is required');
+    if (await this.findByEmail(normalizedEmail)) throw new ConflictException('An account with this email already exists');
+
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    const slugBase = input.businessName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'vendor';
+    const [user, verification] = await this.db.tx(async (trx) => {
+      let slug = slugBase;
+      for (let suffix = 2; await trx('vendor_profiles').where({ slug }).first(); suffix += 1) slug = `${slugBase}-${suffix}`;
+      const [createdUser] = (await trx('users').insert({ name: input.name.trim(), email: normalizedEmail, password_hash: passwordHash, role: 'VENDOR', is_active: true }).returning('*')) as UserRow[];
+      await trx('vendor_profiles').insert({ user_id: createdUser.id, business_name: input.businessName.trim(), slug, phone: input.phone.trim(), location: input.location.trim(), status: 'PENDING_PAYMENT' });
+      await trx('terms_acceptances').insert({ user_id: createdUser.id, terms_version: input.termsVersion.trim(), ip_address: request?.ip, user_agent: request?.headers['user-agent'] });
+      const token = this.createToken(VERIFICATION_HOURS * 60 * 60 * 1000);
+      await trx('email_verification_tokens').insert({ user_id: createdUser.id, token_hash: token.tokenHash, expires_at: token.expiresAt });
+      return [createdUser, token] as const;
+    });
+    const session = await this.issueSession({ ...user, vendor_status: 'PENDING_PAYMENT' }, request);
+    return { ...session, verificationToken: this.exposeDevToken(verification.token) };
+  }
+
   async login(email: string, password: string, request?: Request) {
     const user = await this.findByEmail(email);
     if (!user || !user.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
@@ -140,9 +183,10 @@ export class AuthService {
     if (!token) return null;
     const row = (await this.db.connection('sessions as s')
       .join('users as u', 'u.id', 's.user_id')
+      .leftJoin('vendor_profiles as vp', 'vp.user_id', 'u.id')
       .where({ 's.token_hash': this.hashToken(token), 'u.is_active': true })
       .where('s.expires_at', '>', this.db.connection.fn.now())
-      .select('u.*')
+      .select('u.*', 'vp.status as vendor_status')
       .first()) as UserRow | undefined;
     if (!row) return null;
     await this.db.connection('sessions').where({ token_hash: this.hashToken(token) }).update({ last_seen_at: this.db.connection.fn.now() });
