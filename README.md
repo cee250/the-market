@@ -21,7 +21,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 7** | **Subscription system: start/end dates, renewal history, countdown, expiration** | ✅ **Done** |
 | **Phase 8** | **Vendor dashboard, vendor shop, profile, social links** | ✅ **Done** |
 | **Phase 9** | **Product management, categories, product limits, publishing** | ✅ **Done** |
-| Phase 10–18 | Product media and variants → hardening | ⏳ Planned |
+| **Phase 10** | **Product media, SKU, variants, availability, editing improvements** | ✅ **Done** |
+| Phase 11–18 | Inventory → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -212,6 +213,21 @@ Shop edits are server-authorized and audited. Social links are normalized into t
 | POST | `/api/categories/admin` | Admin category creation |
 
 Publishing requires an active vendor, an active subscription entitlement, and available product capacity. Public shops now expose only `PUBLISHED` products; drafts remain private to their vendor.
+
+**API routes (Phase 10):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| POST | `/api/products/:id/images` | Add relational product images |
+| DELETE | `/api/products/:id/images/:imageId` | Remove an owned image |
+| POST | `/api/products/:id/images/reorder` | Reorder all product images |
+| POST | `/api/products/:id/images/cover` | Select the cover image |
+| GET | `/api/products/:id/variants` | List owned product variants |
+| POST | `/api/products/:id/variants` | Add a SKU-backed variant |
+| PATCH | `/api/products/:id/variants/:variantId` | Edit variant stock, price, options, or availability |
+| DELETE | `/api/products/:id/variants/:variantId` | Delete an owned variant |
+
+Product-level SKUs are unique per vendor, variant SKUs are unique per product, and all media/variant operations enforce vendor ownership.
 
 ## Manual testing (Phase 1)
 
