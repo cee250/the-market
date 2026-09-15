@@ -22,7 +22,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 8** | **Vendor dashboard, vendor shop, profile, social links** | ✅ **Done** |
 | **Phase 9** | **Product management, categories, product limits, publishing** | ✅ **Done** |
 | **Phase 10** | **Product media, SKU, variants, availability, editing improvements** | ✅ **Done** |
-| Phase 11–18 | Inventory → hardening | ⏳ Planned |
+| **Phase 11** | **Simple inventory, stock movements, sales, stock balance** | ✅ **Done** |
+| Phase 12–18 | Cart and checkout → hardening | ⏳ Planned |
 
 ## Architecture
 
@@ -228,6 +229,22 @@ Publishing requires an active vendor, an active subscription entitlement, and av
 | DELETE | `/api/products/:id/variants/:variantId` | Delete an owned variant |
 
 Product-level SKUs are unique per vendor, variant SKUs are unique per product, and all media/variant operations enforce vendor ownership.
+
+**API routes (Phase 11):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/inventory` | Active vendor inventory items with calculated balances |
+| GET | `/api/inventory/summary` | Inventory dashboard totals and low-stock items |
+| POST | `/api/inventory` | Create an inventory item with optional opening stock |
+| PATCH | `/api/inventory/:id` | Edit item metadata and threshold |
+| DELETE | `/api/inventory/:id` | Archive an item |
+| POST | `/api/inventory/:id/add-stock` | Record stock addition |
+| POST | `/api/inventory/:id/record-sale` | Record a sale and prevent negative stock |
+| POST | `/api/inventory/:id/adjust` | Apply a signed stock adjustment |
+| GET | `/api/inventory/:id/movements` | View the append-only movement history |
+
+Remaining stock is calculated as opening quantity plus additions and adjustments minus sales. Stock operations use a database transaction and row lock to prevent lost updates or negative balances.
 
 ## Manual testing (Phase 1)
 

@@ -24,6 +24,7 @@ import { VendorShopPage } from './pages/VendorShopPage';
 import { PublicShopPage } from './pages/PublicShopPage';
 import { VendorProductsPage } from './pages/VendorProductsPage';
 import { AdminCategoriesPage } from './pages/AdminCategoriesPage';
+import { VendorInventoryPage } from './pages/VendorInventoryPage';
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/shop/:slug" element={<PublicShopPage />} />
           <Route path="/vendor/products" element={<VendorProductsPage />} />
           <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+          <Route path="/vendor/inventory" element={<VendorInventoryPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />

@@ -4,19 +4,20 @@ import { DatabaseService } from '../database/database.service';
 import { PackagesService } from '../packages/packages.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { ProductsService } from '../products/products.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 const PLATFORMS = ['whatsapp', 'facebook', 'instagram', 'tiktok', 'x', 'youtube', 'website'] as const;
 type Platform = typeof PLATFORMS[number];
 
 @Injectable()
 export class ShopsService {
-  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly subscriptions: SubscriptionsService, private readonly products: ProductsService) {}
+  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly subscriptions: SubscriptionsService, private readonly products: ProductsService, private readonly inventory: InventoryService) {}
 
   async dashboard(user: AuthUser) {
     this.assertVendor(user);
     const vendor = await this.getVendor(user.id);
-    const [entitlement, subscription, payments] = await Promise.all([this.packages.getVendorEntitlement(user), this.subscriptions.getForVendor(user), this.db.connection('vendor_payments').where({ vendor_profile_id: vendor.id }).count('id as count').first()]);
-    return { shop: await this.toShopDto(vendor, true), vendorStatus: vendor.status, entitlement, subscription: subscription.subscription, renewalHistory: subscription.renewals, paymentCount: Number(payments?.count ?? 0), publishedProductCount: 0 };
+    const [entitlement, subscription, payments, inventorySummary] = await Promise.all([this.packages.getVendorEntitlement(user), this.subscriptions.getForVendor(user), this.db.connection('vendor_payments').where({ vendor_profile_id: vendor.id }).count('id as count').first(), this.inventory.summary(user)]);
+    return { shop: await this.toShopDto(vendor, true), vendorStatus: vendor.status, entitlement, subscription: subscription.subscription, renewalHistory: subscription.renewals, paymentCount: Number(payments?.count ?? 0), publishedProductCount: 0, inventorySummary: { totalItems: inventorySummary.totalItems, totalRemaining: inventorySummary.totalRemaining, totalSold: inventorySummary.totalSold, lowStockItems: inventorySummary.lowStockItems } };
   }
 
   async getOwn(user: AuthUser) { this.assertVendor(user); return this.toShopDto(await this.getVendor(user.id), true); }
