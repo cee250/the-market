@@ -13,7 +13,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | ----- | ----- | ------ |
 | Frontend (pre-spec) | Full storefront SPA | ✅ Done |
 | **Phase 1** | **Project setup, environment, base UI, DB connection, foundational architecture** | ✅ **Done** |
-| Phase 2 | Authentication (roles, secure passwords, sessions, password reset) | ⏳ Next |
+| **Phase 2** | **Authentication (roles, secure passwords, sessions, email verification, password reset)** | ✅ **Done** |
 | Phase 3–18 | Vendor registration → payments → hardening | ⏳ Planned |
 
 ## Architecture
@@ -32,6 +32,7 @@ the-market/                     npm workspaces monorepo
 │   │   ├── app.module.ts       Config (validated env) + Database (global) + feature modules
 │   │   ├── config/             env.validation.ts — fail fast on missing/unsafe env
 │   │   ├── database/           DatabaseModule/Service — Knex pool + tx() helper (single seam)
+│   │   ├── auth/               secure cookie sessions, roles, verification, password reset
 │   │   ├── health/             GET /api/health (DB liveness probe)
 │   │   └── categories/         GET /api/categories, /api/categories/:slug (DB-driven)
 │   ├── db/
@@ -91,6 +92,10 @@ Useful: `npm run build` (both), `npm run typecheck` (both),
 
 `client/.env.example`: `VITE_API_URL` (empty in dev — Vite proxies `/api`).
 
+## Phase 2 details
+
+Authentication is backed by bcrypt password hashes and opaque, HttpOnly cookie sessions. Session and one-time token values are stored only as SHA-256 digests. The API exposes login, registration, current-user, logout, email verification, and password-reset endpoints under `/api/auth`. Reset requests intentionally return the same response whether or not an email exists. In development, registration/reset responses include one-time tokens to support manual testing; these fields are omitted when `NODE_ENV=production`.
+
 ## Phase 1 details
 
 **Files created (server):** module/config/database/health/categories sources,
@@ -115,6 +120,18 @@ Useful: `npm run build` (both), `npm run typecheck` (both),
 | GET | `/api/health` | DB liveness probe; 503 when DB is down |
 | GET | `/api/categories` | Active categories + active subcategories |
 | GET | `/api/categories/:slug` | Single category (404 when missing) |
+
+**API routes (Phase 2):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| POST | `/api/auth/register` | Creates a customer with a bcrypt password and session |
+| POST | `/api/auth/login` | Validates credentials and sets an HttpOnly session cookie |
+| POST | `/api/auth/logout` | Revokes the current session |
+| GET | `/api/auth/me` | Returns the authenticated user |
+| POST | `/api/auth/verify-email` | Consumes a one-time verification token |
+| POST | `/api/auth/password-reset/request` | Generic response to prevent email enumeration |
+| POST | `/api/auth/password-reset/confirm` | Consumes a one-time reset token and revokes sessions |
 
 ## Manual testing (Phase 1)
 

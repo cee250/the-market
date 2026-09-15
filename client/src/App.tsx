@@ -6,7 +6,7 @@ import { ComparePage } from './pages/ComparePage';
 import { HelpPage } from './pages/HelpPage';
 import { HomePage } from './pages/HomePage';
 import { ListingPage } from './pages/ListingPage';
-import { LoginPage, RegisterPage } from './pages/AuthPages';
+import { LoginPage, PasswordResetPage, RegisterPage } from './pages/AuthPages';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { OrderSuccessPage } from './pages/OrderSuccessPage';
 import { OrdersPage } from './pages/OrdersPage';
@@ -31,6 +31,7 @@ export default function App() {
           <Route path="/compare" element={<ComparePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>

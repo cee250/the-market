@@ -27,5 +27,6 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     PORT: port,
     JWT_SECRET: jwtSecret || 'dev-only-secret-change-me-in-production',
     JWT_EXPIRES_IN: config.JWT_EXPIRES_IN ?? '15m',
+    NODE_ENV: config.NODE_ENV ?? 'development',
   };
 }

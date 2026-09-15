@@ -50,8 +50,11 @@ export interface Promo {
 }
 
 export interface User {
+  id?: string;
   name: string;
   email: string;
+  role?: 'CUSTOMER' | 'VENDOR' | 'ADMIN';
+  emailVerified?: boolean;
 }
 
 export interface OrderItem {
