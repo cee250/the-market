@@ -26,7 +26,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 12** | **Cart, multi-vendor checkout, orders, stock reservation** | ✅ **Done** |
 | **Phase 13** | **Provider-agnostic marketplace payments and verification** | ✅ **Done** |
 | **Phase 14** | **Fulfillment, vendor-order isolation, delivery details** | ✅ **Done** |
-| Phase 15–18 | Search → hardening | ⏳ Planned |
+| **Phase 15** | **Marketplace browsing, search, filters, sorting, product details** | ✅ **Done** |
+| Phase 16–18 | Hardening and platform operations | ⏳ Planned |
 
 ## Architecture
 
@@ -280,6 +281,15 @@ Marketplace payments store provider, provider reference, amount, currency, statu
 | GET | `/api/admin/orders` | Admin-only complete order view |
 
 Vendor fulfillment is isolated at the `vendor_profile_id` boundary. Delivery orders retain address, phone, fulfillment method, province, district, sector, and instruction fields for future delivery expansion.
+
+**API routes (Phase 15):**
+
+| Method | Route | Notes |
+| ------ | ----- | ----- |
+| GET | `/api/marketplace/products` | Public published-product search with pagination |
+| GET | `/api/marketplace/products/:slug` | Public published-product detail |
+
+Marketplace search supports text search across product, description, and vendor name, plus category, vendor, location, condition, price range, newest, and price sorting. Only products from active vendors with `PUBLISHED` status are returned.
 
 ## Manual testing (Phase 1)
 
