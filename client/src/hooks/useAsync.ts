@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function useAsync<T>(fn: () => Promise<T>, deps: React.DependencyList) {
   const [data, setData] = useState<T | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const fnRef = useRef(fn);
@@ -14,6 +15,7 @@ export function useAsync<T>(fn: () => Promise<T>, deps: React.DependencyList) {
   useEffect(() => {
     let alive = true;
     setLoading(true);
+    setError(null);
     fnRef
       .current()
       .then((result) => {
@@ -22,9 +24,10 @@ export function useAsync<T>(fn: () => Promise<T>, deps: React.DependencyList) {
           setLoading(false);
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (alive) {
           setData(null);
+          setError(error instanceof Error ? error : new Error('Request failed'));
           setLoading(false);
         }
       });
@@ -34,5 +37,5 @@ export function useAsync<T>(fn: () => Promise<T>, deps: React.DependencyList) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, tick]);
 
-  return { data, loading, reload: () => setTick((t) => t + 1) };
+  return { data, error, loading, reload: () => setTick((t) => t + 1) };
 }

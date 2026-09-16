@@ -113,6 +113,19 @@ export function ProductPage() {
     );
   }
 
+  if (product.error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <EmptyState
+          icon={PackageX}
+          title="Marketplace temporarily unavailable"
+          text="We couldn't load this product right now. Please try again in a moment."
+          action={{ label: 'Return to marketplace', to: '/shop' }}
+        />
+      </div>
+    );
+  }
+
   const p = product.data;
   if (!p) {
     return (
