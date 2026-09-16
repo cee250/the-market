@@ -269,6 +269,24 @@ async function main() {
     body: JSON.stringify({ status: 'CONFIRMED' }),
   });
   assert(fulfillmentUpdate.response.status === 200 && fulfillmentUpdate.body?.status === 'CONFIRMED', 'vendor could not confirm the order');
+  const deliveredUpdate = await request(`/vendor-orders/${vendorOrderId}/status`, {
+    method: 'PATCH',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'DELIVERED' }),
+  });
+  assert(deliveredUpdate.response.status === 200 && deliveredUpdate.body?.status === 'DELIVERED', 'vendor could not mark the order delivered');
+  const notifications = await request('/notifications', { headers: sessionHeaders });
+  assert(notifications.response.status === 200 && Array.isArray(notifications.body?.items) && notifications.body.items.some((item) => item.type === 'ORDER_STATUS'), 'customer order notification was not created');
+  const markedNotifications = await request('/notifications/read-all', { method: 'PATCH', headers: sessionHeaders });
+  assert(markedNotifications.response.status === 200 && markedNotifications.body?.success === true, 'customer notifications could not be marked read');
+  const review = await request(`/products/${productCreation.body.id}/reviews`, {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating: 5, comment: 'Excellent E2E test product.' }),
+  });
+  assert(review.response.status === 201 && review.body?.product_id === productCreation.body.id, 'delivered customer could not submit a product review');
+  const publicReviews = await request(`/marketplace/products/${encodeURIComponent(publishedProduct.body.slug)}/reviews`);
+  assert(publicReviews.response.status === 200 && publicReviews.body.some((item) => item.id === review.body.id), 'submitted product review was not publicly visible');
   const paidCustomerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
   assert(paidCustomerOrder.response.status === 200 && paidCustomerOrder.body?.status === 'PAID', 'customer order did not transition to PAID');
 
@@ -276,7 +294,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, vendor onboarding, payment review, activation, product publishing, checkout, order payment, and fulfillment');
+  console.log('[e2e] PASS health, catalog, auth/session, vendor onboarding, payment review, activation, product publishing, checkout, order payment, delivery notifications, and reviews');
 }
 
 main()
