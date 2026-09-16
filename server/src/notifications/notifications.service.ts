@@ -17,6 +17,11 @@ export class NotificationsService {
     return { success: true };
   }
 
+  async markAllRead(user: AuthUser) {
+    await this.db.connection('notifications').where({ user_id: user.id }).whereNull('read_at').update({ read_at: this.db.connection.fn.now() });
+    return { success: true };
+  }
+
   async create(userId: string, type: string, title: string, message: string, metadata: Record<string, unknown> = {}) {
     const [notification] = await this.db.connection('notifications').insert({ user_id: userId, type, title, message, metadata }).returning('*');
     return notification;

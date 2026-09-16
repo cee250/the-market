@@ -14,4 +14,6 @@ export class NotificationsController {
   list(@Req() request: RequestWithUser) { return this.notifications.list(request.user); }
   @Patch(':id/read')
   read(@Req() request: RequestWithUser, @Param('id') id: string) { return this.notifications.markRead(request.user, id); }
+  @Patch('read-all')
+  readAll(@Req() request: RequestWithUser) { return this.notifications.markAllRead(request.user); }
 }
