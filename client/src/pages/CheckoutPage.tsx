@@ -474,6 +474,11 @@ export function CheckoutPage() {
                 ))}
               </div>
 
+              {checkoutError && (
+                <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                  {checkoutError}
+                </p>
+              )}
               <div className="flex justify-between pt-2">
                 <button
                   type="button"
