@@ -9,6 +9,7 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test test/*.test.cjs",
+    "test:e2e:smoke": "npm run build && node scripts/e2e-smoke.cjs",
     "check:production-config": "npm run build && node scripts/check-production-config.cjs",
     "db:start": "node scripts/dev-db.cjs",
     "db:migrate": "knex --knexfile knexfile.cjs migrate:latest",
