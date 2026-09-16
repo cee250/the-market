@@ -37,4 +37,14 @@ export class HealthController {
     }
     return payload;
   }
+
+  @Get('live')
+  live() {
+    return { status: 'ok', api: 'up', timestamp: new Date().toISOString() };
+  }
+
+  @Get('ready')
+  async ready(): Promise<HealthResponse | never> {
+    return this.check();
+  }
 }
