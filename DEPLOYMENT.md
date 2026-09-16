@@ -6,12 +6,15 @@ Set `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, and `CORS_ORIGIN` befor
 
 ## Release order
 
-1. Build and verify the release with `npm ci`, `npm run audit:high`, `npm run typecheck`, `npm run build`, `npm test`, and `npm run test:e2e:smoke` against a disposable PostgreSQL database.
+1. Build and verify the release with `npm ci`, `npm run release-readiness`, `npm run audit:high`, `npm run typecheck`, `npm run build`, `npm test`, and `npm run test:e2e:smoke` against a disposable PostgreSQL database.
 2. Apply database migrations with `npm run db:migrate -w server`.
 3. Run the idempotent reference seed with `npm run db:seed -w server` only when reference data or the initial administrator is required.
 4. Start the API with `npm run start -w server` and serve the client `client/dist` through the selected static host or CDN.
 
 Never run destructive rollback commands automatically during deployment. Take a database backup before migrations and use `npm run db:rollback -w server` only as an explicitly reviewed recovery operation.
+The `npm run release-readiness` command verifies the release workflow's governance,
+failure diagnostics, cleanup trap, immutable action pins, provenance publication, and
+phase-status documentation before the other release gates run.
 The CI workflow provisions PostgreSQL 18, generates a release manifest, applies migrations and reference seeds through both the smoke harness and the production image, starts the built container, and blocks the release unless its liveness and database readiness endpoints respond successfully. If the container startup or health checks fail, CI prints the container logs and removes the container before exiting. The workflow publishes the manifest as a 30-day artifact containing the verified commit and lockfile digest. It has read-only repository permissions, cancels superseded runs for the same ref, has a bounded verification timeout, and pins third-party actions to immutable release commits.
 
 ## Health checks

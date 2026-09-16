@@ -40,6 +40,8 @@ jobs:
       - run: npm ci
       - name: Generate release manifest
         run: npm run release:manifest
+      - name: Verify release readiness
+        run: npm run release-readiness
       - run: npm run audit:high
       - run: npm run typecheck
       - run: npm run build
