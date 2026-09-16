@@ -20,6 +20,9 @@
     "release:manifest": "node scripts/release-manifest.cjs",
     "release-readiness": "node scripts/release-readiness.cjs"
   },
+  "dependencies": {
+    "serverless-http": "^3.2.0"
+  },
   "engines": {
     "node": ">=20.19"
   }

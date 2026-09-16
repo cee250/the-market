@@ -1,13 +1,14 @@
 [build]
-  command = "npm run build -w client"
+  command = "npm run db:migrate -w server && npm run db:seed -w server && npm run build -w client"
   publish = "client/dist"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
 
 [[redirects]]
   from = "/api/*"
-  to = "https://api.market.rw/api/:splat"
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 

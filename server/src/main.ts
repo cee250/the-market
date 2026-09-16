@@ -6,13 +6,16 @@ import { randomUUID } from 'node:crypto';
 import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
-async function bootstrap(): Promise<void> {
+export async function createApp() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
   const isProduction = config.get<string>('NODE_ENV') === 'production';
+  const runningInNetlify = Boolean(process.env.NETLIFY || process.env.NETLIFY_FUNCTION_NAME);
 
-  // All routes are served under /api (e.g. GET /api/health)
-  app.setGlobalPrefix('api');
+  // Standalone deployments expose /api; the Netlify redirect strips /api before
+  // invoking the function, so the function must mount controllers at root.
+  if (!runningInNetlify) app.setGlobalPrefix('api');
+
   const httpAdapter = app.getHttpAdapter().getInstance();
   httpAdapter.disable('x-powered-by');
   httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
@@ -26,19 +29,12 @@ async function bootstrap(): Promise<void> {
     const requestId = randomUUID();
     const startedAt = process.hrtime.bigint();
     response.setHeader('X-Request-Id', requestId);
-    if (request.path.startsWith('/api/')) response.setHeader('Cache-Control', 'no-store');
+    if (request.path.startsWith('/api/') || runningInNetlify) response.setHeader('Cache-Control', 'no-store');
     if (isProduction) response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     response.on('finish', () => {
       if (!isProduction) return;
       const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
-      console.log(JSON.stringify({
-        event: 'http_request',
-        requestId,
-        method: request.method,
-        path: request.path,
-        status: response.statusCode,
-        durationMs: Math.round(durationMs * 100) / 100,
-      }));
+      console.log(JSON.stringify({ event: 'http_request', requestId, method: request.method, path: request.path, status: response.statusCode, durationMs: Math.round(durationMs * 100) / 100 }));
     });
     next();
   });
@@ -51,7 +47,7 @@ async function bootstrap(): Promise<void> {
   const rateLimitWindowMs = config.get<number>('RATE_LIMIT_WINDOW_MS') ?? 60_000;
   const rateLimitMax = config.get<number>('RATE_LIMIT_MAX') ?? 10;
   const attempts = new Map<string, { count: number; resetAt: number }>();
-  httpAdapter.use('/api/auth', (request: Request, response: Response, next: NextFunction) => {
+  httpAdapter.use('/auth', (request: Request, response: Response, next: NextFunction) => {
     if (request.method === 'GET') return next();
     const key = `${request.ip ?? 'unknown'}:${request.path}`;
     const now = Date.now();
@@ -59,11 +55,7 @@ async function bootstrap(): Promise<void> {
     const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + rateLimitWindowMs };
     bucket.count += 1;
     attempts.set(key, bucket);
-    if (attempts.size > 10_000) {
-      for (const [entryKey, entry] of attempts) {
-        if (entry.resetAt <= now) attempts.delete(entryKey);
-      }
-    }
+    if (attempts.size > 10_000) for (const [entryKey, entry] of attempts) if (entry.resetAt <= now) attempts.delete(entryKey);
     response.setHeader('X-RateLimit-Limit', String(rateLimitMax));
     response.setHeader('X-RateLimit-Remaining', String(Math.max(0, rateLimitMax - bucket.count)));
     if (bucket.count > rateLimitMax) {
@@ -73,22 +65,17 @@ async function bootstrap(): Promise<void> {
     return next();
   });
 
-  // Whitelist + transform on all incoming DTOs (spec §44: server-side validation)
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-
-  // Clean shutdown: closes the DB connection pool (spec §51: transaction safety)
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
   app.enableShutdownHooks();
+  return app;
+}
 
+async function bootstrap(): Promise<void> {
+  const app = await createApp();
+  const config = app.get(ConfigService);
   const port = config.get<number>('PORT') ?? 4000;
   await app.listen(port, '0.0.0.0');
-  // eslint-disable-next-line no-console
   console.log(`[api] Market API listening on http://0.0.0.0:${port}/api`);
 }
 
-void bootstrap();
+if (!process.env.NETLIFY && !process.env.NETLIFY_FUNCTION_NAME) void bootstrap();
