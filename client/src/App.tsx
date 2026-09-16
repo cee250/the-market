@@ -27,6 +27,7 @@ import { AdminCategoriesPage } from './pages/AdminCategoriesPage';
 import { VendorInventoryPage } from './pages/VendorInventoryPage';
 import { VendorFulfillmentPage } from './pages/VendorFulfillmentPage';
 import { AdminOperationsPage } from './pages/AdminOperationsPage';
+import { VendorAnalyticsPage } from './pages/VendorAnalyticsPage';
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="/admin/categories" element={<AdminCategoriesPage />} />
           <Route path="/vendor/inventory" element={<VendorInventoryPage />} />
           <Route path="/vendor/fulfillment" element={<VendorFulfillmentPage />} />
+          <Route path="/vendor/analytics" element={<VendorAnalyticsPage />} />
           <Route path="/admin/operations" element={<AdminOperationsPage />} />
           <Route path="/password-reset" element={<PasswordResetPage />} />
           <Route path="/help" element={<HelpPage />} />
