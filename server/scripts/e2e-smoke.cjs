@@ -218,11 +218,65 @@ async function main() {
   });
   assert(activatedVendor.response.status === 201 && activatedVendor.body?.status === 'ACTIVE', `admin activation did not activate vendor: HTTP ${activatedVendor.response.status} ${JSON.stringify(activatedVendor.body)}`);
 
+  const productCreation = await request('/products', {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Test Product', sku: `E2E-${Date.now()}`, description: 'Product created by the Phase 35 smoke test', price: 12500, location: 'Kigali', condition: 'new', availability: 'in_stock' }),
+  });
+  assert(productCreation.response.status === 201 && productCreation.body?.id, 'vendor product creation failed');
+  const publishedProduct = await request(`/products/${productCreation.body.id}/publish`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'PUBLISHED' }),
+  });
+  assert(publishedProduct.response.status === 201 && publishedProduct.body?.status === 'PUBLISHED', 'vendor product publishing failed');
+  const publicProduct = await request(`/marketplace/products/${encodeURIComponent(publishedProduct.body.slug)}`);
+  assert(publicProduct.response.status === 200 && publicProduct.body?.id === productCreation.body.id, 'published product was not publicly visible');
+
+  const addToCart = await request('/cart/items', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId: productCreation.body.id, quantity: 1 }),
+  });
+  assert(addToCart.response.status === 201 && addToCart.body?.items?.length === 1, 'customer could not add published product to cart');
+  const checkout = await request('/checkout', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': `e2e-checkout-${Date.now()}` },
+    body: JSON.stringify({ customerName: 'E2E Customer', phone: '0788112233', email, deliveryAddress: 'KG 1 Ave, Kigali', fulfillmentMethod: 'DELIVERY', paymentMethod: 'mobile-money' }),
+  });
+  assert(checkout.response.status === 201 && checkout.body?.id, `checkout failed: HTTP ${checkout.response.status} ${JSON.stringify(checkout.body)}`);
+  const orderId = checkout.body.id;
+  const customerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
+  assert(customerOrder.response.status === 200 && customerOrder.body?.vendorOrders?.length === 1, 'created order detail is invalid');
+  const orderPayment = await request(`/payments/orders/${orderId}/intent`, {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'test-provider' }),
+  });
+  assert(orderPayment.response.status === 201 && orderPayment.body?.status === 'PENDING', 'order payment intent was not created');
+  const verifiedOrderPayment = await request(`/payments/orders/${orderPayment.body.id}/verify`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'PAID', providerReference: 'E2E-PAID' }),
+  });
+  assert(verifiedOrderPayment.response.status === 201 && verifiedOrderPayment.body?.status === 'PAID', 'admin could not verify order payment');
+  const vendorOrderList = await request('/vendor-orders', { headers: vendorHeaders });
+  assert(vendorOrderList.response.status === 200 && vendorOrderList.body?.length === 1, 'vendor did not receive the created order');
+  const vendorOrderId = vendorOrderList.body[0].id;
+  const fulfillmentUpdate = await request(`/vendor-orders/${vendorOrderId}/status`, {
+    method: 'PATCH',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'CONFIRMED' }),
+  });
+  assert(fulfillmentUpdate.response.status === 200 && fulfillmentUpdate.body?.status === 'CONFIRMED', 'vendor could not confirm the order');
+  const paidCustomerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
+  assert(paidCustomerOrder.response.status === 200 && paidCustomerOrder.body?.status === 'PAID', 'customer order did not transition to PAID');
+
   const vendorDashboard = await request('/shops/dashboard', { headers: vendorHeaders });
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, categories, auth/session, cart, checkout, orders, vendor onboarding, payment review, activation, and fulfillment boundaries');
+  console.log('[e2e] PASS health, catalog, auth/session, vendor onboarding, payment review, activation, product publishing, checkout, order payment, and fulfillment');
 }
 
 main()
