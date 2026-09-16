@@ -12,7 +12,7 @@ import {
 import { CITIES, SITE } from '../config/site';
 import { useCart } from '../context/CartContext';
 import { cx, formatPrice } from '../lib/utils';
-import { saveOrder } from '../services/orders';
+import { ordersApi, saveOrder } from '../services/orders';
 import type { Order, OrderItem, PaymentMethod } from '../types';
 
 type Step = 1 | 2 | 3;
@@ -66,6 +66,8 @@ export function CheckoutPage() {
 
   const [step, setStep] = useState<Step>(1);
   const [placing, setPlacing] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -119,9 +121,14 @@ export function CheckoutPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const placeOrder = () => {
+  const placeOrder = async () => {
     if (!validate(2) && !validate(1)) return;
     setPlacing(true);
+    setCheckoutError('');
+    try {
+      const result = await ordersApi.checkout({ customerName: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), deliveryAddress: `${form.address.trim()}, ${form.city}`, fulfillmentMethod: 'DELIVERY', paymentMethod: method }, idempotencyKey) as { id?: string; order_number?: string };
+      const orderId = result.id ?? result.order_number;
+      if (!orderId) throw new Error('The order was created without an identifier.');
     const items: OrderItem[] = cart.items.map((i) => ({
       id: i.id,
       name: i.name,
@@ -148,12 +155,13 @@ export function CheckoutPage() {
       createdAt: new Date().toISOString(),
       status: 'confirmed',
     };
-    // Simulate payment processing, then persist the order
-    window.setTimeout(() => {
-      saveOrder(order);
+      saveOrder({ ...order, id: String(orderId) });
       cart.clear();
-      navigate(`/order-success/${order.id}`);
-    }, 1100);
+      navigate(`/order-success/${orderId}`);
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : 'Checkout could not be completed.');
+      setPlacing(false);
+    }
   };
 
   const { subtotal, discount, shipping, total } = cart.totals;
