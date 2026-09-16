@@ -58,7 +58,7 @@ export function ComparePage() {
 
   const handleAdd = (p: Product) => {
     if (p.stock === 0) return;
-    cart.addItem(p.id);
+    cart.addItem(p.id, 1, p);
     toast(`${p.name} added to cart`);
   };
 

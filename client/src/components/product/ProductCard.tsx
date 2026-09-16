@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
 
   const handleAdd = () => {
     if (out) return;
-    addItem(product.id);
+    addItem(product.id, 1, product);
     toast(`${product.name} added to cart`);
   };
 

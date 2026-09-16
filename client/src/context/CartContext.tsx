@@ -27,7 +27,7 @@ interface CartContextValue {
   count: number;
   totals: CartTotals;
   promo: Promo | null;
-  addItem: (productId: string, qty?: number) => void;
+  addItem: (productId: string, qty?: number, product?: import('../types').Product) => void;
   setQty: (productId: string, qty: number) => void;
   removeItem: (productId: string) => void;
   clear: () => void;
@@ -45,7 +45,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(() => {
     const items: ResolvedCartItem[] = [];
     for (const item of rawItems) {
-      const product = productById.get(item.id);
+      const product = item.product ?? productById.get(item.id);
       if (!product) continue;
       items.push({
         id: product.id,
@@ -71,17 +71,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       count,
       totals: { subtotal, discount, shipping, total },
       promo,
-      addItem: (productId, qty = 1) => {
-        const product = productById.get(productId);
+      addItem: (productId, qty = 1, snapshot) => {
+        const product = snapshot ?? productById.get(productId);
         if (!product || product.stock === 0) return;
         setRawItems((prev) => {
           const existing = prev.find((i) => i.id === productId);
           if (existing) {
             return prev.map((i) =>
-              i.id === productId ? { ...i, qty: Math.min(i.qty + qty, product.stock) } : i,
+              i.id === productId ? { ...i, qty: Math.min(i.qty + qty, product.stock), product } : i,
             );
           }
-          return [...prev, { id: productId, qty: Math.min(qty, product.stock) }];
+          return [...prev, { id: productId, qty: Math.min(qty, product.stock), product }];
         });
       },
       setQty: (productId, qty) => {

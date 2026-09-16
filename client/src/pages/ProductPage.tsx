@@ -147,7 +147,7 @@ export function ProductPage() {
 
   const handleAdd = (thenBuy = false) => {
     if (out) return;
-    addItem(p.id, qty);
+    addItem(p.id, qty, p);
     if (thenBuy) navigate('/checkout');
     else toast(`${p.name} added to cart`);
   };

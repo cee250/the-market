@@ -43,6 +43,7 @@ export interface CartItem {
   /** Product id. */
   id: string;
   qty: number;
+  product?: Product;
 }
 
 export interface Promo {
