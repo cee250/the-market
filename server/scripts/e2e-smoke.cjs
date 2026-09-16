@@ -145,7 +145,19 @@ async function main() {
   const authenticated = await request('/auth/me', { headers: { Cookie: setCookie.split(';')[0] } });
   assert(authenticated.response.status === 200 && authenticated.body?.user?.email === email, 'authenticated /auth/me response is invalid');
 
-  console.log('[e2e] PASS health probes, catalog listing/detail/reviews, categories, authorization, registration, and session lookup');
+  const sessionHeaders = { Cookie: setCookie.split(';')[0] };
+  const cart = await request('/cart', { headers: sessionHeaders });
+  assert(cart.response.status === 200 && Array.isArray(cart.body?.items), 'authenticated cart response is invalid');
+  const invalidCheckout = await request('/checkout', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': `e2e-invalid-${Date.now()}` },
+    body: JSON.stringify({}),
+  });
+  assert(invalidCheckout.response.status === 400, `invalid checkout returned ${invalidCheckout.response.status}`);
+  const orders = await request('/orders', { headers: sessionHeaders });
+  assert(orders.response.status === 200 && Array.isArray(orders.body), 'authenticated orders response is invalid');
+
+  console.log('[e2e] PASS health probes, catalog, categories, auth/session, cart, checkout validation, and orders');
 }
 
 main()
