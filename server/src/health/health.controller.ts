@@ -1,5 +1,4 @@
-import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
 
 interface HealthResponse {
@@ -14,7 +13,7 @@ interface HealthResponse {
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly db: DatabaseService, @Inject(ConfigService) private readonly config: ConfigService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   @Get()
   async check(): Promise<HealthResponse | never> {
@@ -32,7 +31,7 @@ export class HealthController {
       status: database === 'up' ? 'ok' : 'degraded',
       database,
       api: 'up',
-      version: this.config.get<string>('APP_VERSION') ?? '0.2.0',
+      version: process.env.APP_VERSION ?? '0.2.0',
       uptimeSeconds: Math.round(process.uptime()),
       timestamp: new Date().toISOString(),
       checks: { database: { status: database, latencyMs: databaseLatencyMs } },
