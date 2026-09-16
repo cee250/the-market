@@ -9,6 +9,7 @@ import {
   Package,
   ShoppingBag,
   ShoppingCart,
+  ShieldCheck,
   Store,
   User,
 } from 'lucide-react';
@@ -189,6 +190,15 @@ export function Header() {
                     >
                       <Heart size={16} className="text-slate-400" /> Wishlist
                     </Link>
+                    {user.role === 'ADMIN' && (
+                      <Link
+                        to="/admin/moderation"
+                        onClick={() => setAccountOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <ShieldCheck size={16} className="text-slate-400" /> Moderation center
+                      </Link>
+                    )}
                     <button
                       type="button"
                       onClick={handleLogout}

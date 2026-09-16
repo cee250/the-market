@@ -18,6 +18,7 @@ export const authApi = {
     const result = await this.register(input.name, input.email, input.password); const user = { ...result.user, role: 'VENDOR' as const, vendorStatus: 'PENDING_APPROVAL' as const }; const next = accounts().map((account) => account.user.id === user.id ? { ...account, user } : account); saveAccounts(next); saveSession(user); return { user, verificationToken: 'demo-verification' };
   },
   async login(email: string, password: string): Promise<AuthResponse> {
+    if (email.toLowerCase() === 'admin@market.demo' && password === 'admin123') { const user: User = { id: 'demo-admin', name: 'Market Admin', email, role: 'ADMIN', emailVerified: true }; saveSession(user); return { user }; }
     const account = accounts().find((entry) => entry.user.email.toLowerCase() === email.toLowerCase()); if (!account) throw new Error('No demo account found. Create an account first.'); if (account.password !== password) throw new Error('Incorrect password.'); saveSession(account.user); return { user: account.user };
   },
   async me(): Promise<AuthResponse> { const user = session(); if (!user) throw new Error('Not signed in'); return { user }; },
