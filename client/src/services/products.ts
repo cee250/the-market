@@ -12,7 +12,7 @@ const defaultSubcategories: Record<string, string[]> = {
 };
 function readCategories(): Category[] { try { const saved = JSON.parse(window.localStorage.getItem(CATEGORY_KEY) ?? 'null') as Category[] | null; if (saved) return saved; } catch { /* use defaults */ } return demoCategories.map((category) => ({ id: category.slug, name: category.name, slug: category.slug, isActive: true, subcategories: (defaultSubcategories[category.slug] ?? []).map((name) => ({ id: `${category.slug}-${slugify(name)}`, name, slug: slugify(name) })) })); }
 function saveCategories(categories: Category[]) { try { window.localStorage.setItem(CATEGORY_KEY, JSON.stringify(categories)); } catch { /* unavailable */ } }
-function readProducts(): Product[] { try { return JSON.parse(window.localStorage.getItem(PRODUCT_KEY) ?? '[]') as Product[]; } catch { return []; } }
+function readProducts(): Product[] { try { const saved = JSON.parse(window.localStorage.getItem(PRODUCT_KEY) ?? 'null') as Product[] | null; if (saved) return saved; } catch { /* seed below */ } const seeded = demoProducts.slice(0, 4).map((product, index) => ({ id: `demo-posted-${product.id}`, name: product.name, slug: product.slug ?? product.id, sku: `DEMO-${100 + index}`, price: product.price, currency: 'RWF', categoryId: product.categorySlug, categoryName: product.categoryName, location: 'Kigali', condition: 'NEW', availability: 'IN_STOCK', status: 'PUBLISHED' as const, images: [{ id: `demo-image-${index}`, url: product.image, sortOrder: 0, isCover: true }], variants: [] })); saveProducts(seeded); return seeded; }
 function saveProducts(products: Product[]) { try { window.localStorage.setItem(PRODUCT_KEY, JSON.stringify(products)); } catch { /* unavailable */ } }
 
 export const productsApi = {
