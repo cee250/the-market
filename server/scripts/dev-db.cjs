@@ -11,6 +11,28 @@
  */
 const fs = require('fs');
 const path = require('path');
+
+// The Linux binary distribution includes its own libpq/ICU/OpenSSL builds.
+// Make those libraries discoverable before embedded-postgres spawns initdb or
+// postgres; otherwise clean Ubuntu installations fail with "libpq.so.5 not
+// found" even though the runtime libraries are present in node_modules.
+if (process.platform === 'linux' && process.arch === 'x64') {
+  const embeddedRoot = path.join(__dirname, '..', '..', 'node_modules', '@embedded-postgres', 'linux-x64');
+  const bundledLibDir = path.join(embeddedRoot, 'native', 'lib');
+  process.env.LD_LIBRARY_PATH = [bundledLibDir, process.env.LD_LIBRARY_PATH].filter(Boolean).join(path.delimiter);
+
+  // npm normally creates these links through the package install script, but
+  // installs with --ignore-scripts leave the native distribution incomplete.
+  // Rehydrate them here so the documented db:start command remains reliable.
+  const symlinkManifest = path.join(embeddedRoot, 'native', 'pg-symlinks.json');
+  if (fs.existsSync(symlinkManifest)) {
+    for (const { source, target } of JSON.parse(fs.readFileSync(symlinkManifest, 'utf8'))) {
+      const targetPath = path.join(embeddedRoot, target);
+      if (!fs.existsSync(targetPath)) fs.symlinkSync(path.relative(path.dirname(targetPath), path.join(embeddedRoot, source)), targetPath);
+    }
+  }
+}
+
 const EP = require('embedded-postgres').default;
 
 const port = Number(process.env.PG_PORT || 5433);
