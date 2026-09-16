@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Tag, Trash2, Truck, X } from 'lucide-react';
 import { EmptyState } from '../components/ui/EmptyState';
 import { QuantityStepper } from '../components/ui/QuantityStepper';
-import { SITE } from '../config/site';
+import { PROMO_OFFERS, SITE } from '../config/site';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { cx, formatPrice } from '../lib/utils';
@@ -216,9 +216,9 @@ export function CartPage() {
               {codeError ? (
                 <p className="mt-1.5 text-xs text-rose-600">{codeError}</p>
               ) : (
-                <p className="mt-1.5 text-xs text-slate-400">
-                  Try <button type="button" onClick={() => setCode('WELCOME10')} className="font-semibold text-emerald-700 hover:underline">WELCOME10</button> for 10% off
-                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {PROMO_OFFERS.map((offer) => <button key={offer.code} type="button" onClick={() => setCode(offer.code)} className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100">{offer.code} · {offer.percent}%</button>)}
+                </div>
               )}
             </div>
           )}

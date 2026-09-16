@@ -4,6 +4,7 @@ import { CategoryGrid } from '../components/product/CategoryGrid';
 import { FeatureStrip } from '../components/product/FeatureStrip';
 import { HeroCarousel } from '../components/product/HeroCarousel';
 import { PromoTiles } from '../components/product/PromoTiles';
+import { PromoBanner } from '../components/product/PromoBanner';
 import { ProductCard } from '../components/product/ProductCard';
 import { SellerBanner } from '../components/product/SellerBanner';
 import { ProductGridSkeleton } from '../components/ui/Skeletons';
@@ -31,6 +32,7 @@ export function HomePage() {
     <>
       <HeroCarousel />
       <PromoTiles />
+      <PromoBanner />
 
       {/* Shop collections — tabbed carousel */}
       <section className="mx-auto max-w-7xl px-4 pt-14 sm:px-6">

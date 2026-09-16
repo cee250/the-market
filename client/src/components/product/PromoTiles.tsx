@@ -15,7 +15,7 @@ const TILES = [
   {
     title: 'Home Decor',
     image: '/images/categories/home-kitchen.jpg',
-    to: '/category/home-kitchen-pets',
+    to: '/category/home-kitchen',
   },
 ];
 
