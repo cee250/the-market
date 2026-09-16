@@ -11,6 +11,17 @@ export const demoCategories: Category[] = [
   { slug: 'gifts-stationery', name: 'Gifts & Stationery', shortName: 'Gifts & Stationery', description: 'Thoughtful finds for desks, homes and special moments.', image: '/images/categories/mobiles-computers.jpg' },
 ];
 
+export const demoSubcategories: Record<string, { name: string; slug: string }[]> = {
+  'womens-fashion': ['Dresses', 'Bags & Accessories', 'Shoes'].map((name) => ({ name, slug: name.toLowerCase().replaceAll(' ', '-') })),
+  'mens-fashion': ['Shirts', 'Shoes', 'Accessories'].map((name) => ({ name, slug: name.toLowerCase() })),
+  'mobiles-computers': ['Phones', 'Computers', 'Accessories'].map((name) => ({ name, slug: name.toLowerCase() })),
+  'tv-electronics': ['Televisions', 'Audio', 'Smart Home'].map((name) => ({ name, slug: name.toLowerCase().replaceAll(' ', '-') })),
+  'home-kitchen': ['Kitchen', 'Decor', 'Furniture'].map((name) => ({ name, slug: name.toLowerCase() })),
+  'beauty-health': ['Skincare', 'Haircare', 'Wellness'].map((name) => ({ name, slug: name.toLowerCase() })),
+  'outdoor-travel': ['Travel Gear', 'Camping', 'Fitness'].map((name) => ({ name, slug: name.toLowerCase().replaceAll(' ', '-') })),
+  'gifts-stationery': ['Stationery', 'Gifts', 'Desk Accessories'].map((name) => ({ name, slug: name.toLowerCase().replaceAll(' ', '-') })),
+};
+
 const imageByCategory: Record<string, string> = Object.fromEntries(demoCategories.map((category) => [category.slug, category.image]));
 const make = (id: string, name: string, categorySlug: string, price: number, originalPrice: number | undefined, rating: number, reviewCount: number, tags: Product['tags'], description: string, specs: Product['specs'], daysAgo: number): Product => ({
   id, slug: id, name, categorySlug, categoryName: demoCategories.find((c) => c.slug === categorySlug)?.name ?? 'Market', price, originalPrice, rating, reviewCount, description, specs, image: imageByCategory[categorySlug], stock: 8 + (Number(id.replace(/\D/g, '')) % 18), tags, createdAt: new Date(Date.now() - daysAgo * 86400000).toISOString(),

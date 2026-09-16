@@ -8,6 +8,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ProductGridSkeleton } from '../components/ui/Skeletons';
 import { useAsync } from '../hooks/useAsync';
 import { api, type SortKey } from '../services/api';
+import { demoSubcategories } from '../services/demoData';
 import { cx } from '../lib/utils';
 
 const PAGE_SIZE = 12;
@@ -85,6 +86,13 @@ function FiltersPanel({
               >
                 {c.shortName}
               </button>
+              <div className="ml-5 mt-1 flex flex-wrap gap-1">
+                {(demoSubcategories[c.slug] ?? []).map((subcategory) => (
+                  <button key={subcategory.slug} type="button" onClick={() => navigate(`/category/${c.slug}?subcategory=${subcategory.slug}`)} className="rounded-full px-2 py-1 text-[11px] text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700">
+                    {subcategory.name}
+                  </button>
+                ))}
+              </div>
             </li>
           ))}
         </ul>
@@ -263,6 +271,13 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-10">
             <h1 className="text-2xl font-extrabold text-white sm:text-3xl">{category.name}</h1>
             <p className="mt-1 max-w-md text-sm text-white/80">{category.description}</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {(demoSubcategories[category.slug] ?? []).map((subcategory) => (
+                <Link key={subcategory.slug} to={`/category/${category.slug}?subcategory=${subcategory.slug}`} className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25">
+                  {subcategory.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}
