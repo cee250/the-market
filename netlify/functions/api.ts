@@ -12,6 +12,12 @@ async function getHandler(): Promise<Handler> {
 }
 
 export const handler: Handler = async (event, context, callback) => {
-  const appHandler = await getHandler();
-  return appHandler(event, context, callback);
+  try {
+    const appHandler = await getHandler();
+    return appHandler(event, context, callback);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown API startup error';
+    console.error('[netlify-api] startup failure', message);
+    return { statusCode: 500, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ error: message }) };
+  }
 };
