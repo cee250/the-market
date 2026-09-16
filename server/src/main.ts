@@ -9,6 +9,7 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
+  const isProduction = config.get<string>('NODE_ENV') === 'production';
 
   // All routes are served under /api (e.g. GET /api/health)
   app.setGlobalPrefix('api');
@@ -22,8 +23,23 @@ async function bootstrap(): Promise<void> {
     next();
   });
   httpAdapter.use((request: Request, response: Response, next: NextFunction) => {
-    response.setHeader('X-Request-Id', randomUUID());
+    const requestId = randomUUID();
+    const startedAt = process.hrtime.bigint();
+    response.setHeader('X-Request-Id', requestId);
     if (request.path.startsWith('/api/')) response.setHeader('Cache-Control', 'no-store');
+    if (isProduction) response.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    response.on('finish', () => {
+      if (!isProduction) return;
+      const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+      console.log(JSON.stringify({
+        event: 'http_request',
+        requestId,
+        method: request.method,
+        path: request.path,
+        status: response.statusCode,
+        durationMs: Math.round(durationMs * 100) / 100,
+      }));
+    });
     next();
   });
 
