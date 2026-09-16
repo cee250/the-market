@@ -37,7 +37,8 @@ assert(/Phase 53.*✅ \*\*Complete\*\*/.test(readme), 'README must mark Phase 53
 assert(/Phase 54.*✅ \*\*Complete\*\*/.test(readme), 'README must mark Phase 54 complete');
 assert(/Phase 55.*✅ \*\*Complete\*\*/.test(readme), 'README must mark Phase 55 complete');
 assert(/Phase 56.*✅ \*\*Complete\*\*/.test(readme), 'README must mark Phase 56 complete');
-assert(/Phase 57.*🚧 \*\*In progress\*\*/.test(readme), 'README must identify Phase 57 as in progress');
+assert(/Phase 57.*✅ \*\*Complete\*\*/.test(readme), 'README must mark Phase 57 complete');
+assert(/Phase 58.*🚧 \*\*In progress\*\*/.test(readme), 'README must identify Phase 58 as in progress');
 assert(/release-readiness/.test(deployment), 'deployment runbook must document the readiness verifier');
 
 if (fs.existsSync(manifestPath)) {

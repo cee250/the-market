@@ -9,7 +9,8 @@ Set `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, and `CORS_ORIGIN` befor
 1. Build and verify the release with `npm ci`, `npm run release-readiness`, `npm run audit:high`, `npm run typecheck`, `npm run build`, `npm test`, and `npm run test:e2e:smoke` against a disposable PostgreSQL database.
 2. Apply database migrations with `npm run db:migrate -w server`.
 3. Run the idempotent reference seed with `npm run db:seed -w server` only when reference data or the initial administrator is required.
-4. Start the API with `npm run start -w server` and serve the client `client/dist` through the selected static host or CDN.
+4. Deploy the API container to the selected production host, set the required production environment variables, and wait for both `/api/health/live` and `/api/health/ready` to succeed.
+5. Deploy the client through Netlify using `netlify.toml`; it builds with `npm run build -w client`, publishes `client/dist`, applies SPA fallback routing, and proxies `/api/*` to `https://api.market.rw`.
 
 Never run destructive rollback commands automatically during deployment. Take a database backup before migrations and use `npm run db:rollback -w server` only as an explicitly reviewed recovery operation.
 The `npm run release-readiness` command verifies the release workflow's governance,
@@ -28,6 +29,15 @@ The API disables the Express `X-Powered-By` fingerprint and sends baseline brows
 ## Container builds
 
 The API can be built with `docker build -f server/Dockerfile .`. The image includes the compiled API, Knex configuration, migrations, and reference seeds, so an externally managed PostgreSQL database can be migrated with `npm run db:migrate -w server` and seeded with `npm run db:seed -w server` inside the release workflow. The API process runs as the unprivileged `node` user, and the container exposes a liveness healthcheck at `/api/health/live`. It requires the same production environment variables. The client remains a static Vite artifact and should be built with `npm run build -w client` and deployed to a static host with SPA fallback to `index.html`.
+
+## Netlify storefront
+
+The repository includes [`netlify.toml`](./netlify.toml). Configure the Netlify site
+to use the repository's `main` branch and do not override its build command or publish
+directory. The API must be available at `https://api.market.rw` before enabling the
+`/api/*` proxy; otherwise the storefront will build successfully but API requests will
+fail. If the production API uses another origin, update `netlify.toml` and
+`VITE_API_URL` together before deploying.
 
 ## Observability expectations
 

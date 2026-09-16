@@ -52,7 +52,7 @@ jobs:
           E2E_SKIP_DB: '1'
           E2E_DATABASE_URL: postgresql://market:market@127.0.0.1:5433/market
           ADMIN_EMAIL: admin@market.rw
-          ADMIN_PASSWORD: ChangeMe123!
+          ADMIN_PASSWORD: ci-only-admin-password-2026!
       - run: docker build --file server/Dockerfile --tag market-api:ci .
       - name: Smoke test production container
         shell: bash
@@ -61,7 +61,7 @@ jobs:
           JWT_SECRET: ci-only-secret-that-is-long-enough-for-container
           CORS_ORIGIN: http://localhost:4000
           ADMIN_EMAIL: admin@market.rw
-          ADMIN_PASSWORD: ChangeMe123!
+          ADMIN_PASSWORD: ci-only-admin-password-2026!
         run: |
           set -euo pipefail
           docker run --rm --network host \

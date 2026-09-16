@@ -11,7 +11,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 
 > **Implementation status:** The original architecture roadmap is complete through
 > Phase 18. The project is now tracked in numbered hardening and production-readiness
-> increments. **Phase 56 is complete**, and **Phase 57 is in progress**.
+> increments. **Phase 57 is complete**, and **Phase 58 is in progress**.
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -45,7 +45,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 54** | **CI least-privilege permissions, concurrency control, and bounded execution** | ✅ **Complete** |
 | **Phase 55** | **Immutable GitHub Actions pinning and CI supply-chain hardening** | ✅ **Complete** |
 | **Phase 56** | **Release manifest generation and CI provenance artifact publication** | ✅ **Complete** |
-| **Phase 57** | **Release-readiness verification and documentation synchronization** | 🚧 **In progress** |
+| **Phase 57** | **Release-readiness verification and documentation synchronization** | ✅ **Complete** |
+| **Phase 58** | **Final deployment and production rollout** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -149,6 +150,11 @@ Phase 57 adds a deterministic release-readiness verifier to CI. It checks the
 workflow's least-privilege permissions, concurrency cancellation, bounded timeout,
 container failure diagnostics and cleanup, immutable action pins, provenance artifact
 publication, and synchronized phase-status documentation.
+
+Phase 58 prepares the client storefront for Netlify with a reproducible Vite build,
+SPA fallback, security headers, and an `/api` proxy to the production API origin.
+The API remains a separately hosted production service and must pass the container
+release gate before the storefront is pointed at it.
 
 Phase 54 restricts the workflow token to read-only repository contents, cancels stale
 runs for the same branch or pull request, and bounds the verification job to prevent
