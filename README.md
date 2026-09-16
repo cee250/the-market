@@ -37,10 +37,11 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 46** | **Readiness dependency diagnostics and production health observability** | ✅ **Complete** |
 | **Phase 47** | **Readiness contract regression coverage and release-status synchronization** | ✅ **Complete** |
 | **Phase 48** | **Dependency vulnerability remediation and CI audit enforcement** | ✅ **Complete** |
-| **Phase 49** | **CI-backed PostgreSQL end-to-end smoke verification and release-gate synchronization** | 🚧 **In progress** |
-| **Phase 50** | **Production container completeness, healthcheck, and image-build verification** | 🚧 **In progress** |
-| **Phase 51** | **Production container migration, startup, and liveness/readiness smoke verification** | 🚧 **In progress** |
-| **Phase 52** | **Non-root production container hardening and runtime identity verification** | 🚧 **In progress** |
+| **Phase 49** | **CI-backed PostgreSQL end-to-end smoke verification and release-gate synchronization** | ✅ **Complete** |
+| **Phase 50** | **Production container completeness, healthcheck, and image-build verification** | ✅ **Complete** |
+| **Phase 51** | **Production container migration, startup, and liveness/readiness smoke verification** | ✅ **Complete** |
+| **Phase 52** | **Non-root production container hardening and runtime identity verification** | ✅ **Complete** |
+| **Phase 53** | **CI container failure diagnostics and cleanup reliability** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -128,6 +129,9 @@ container liveness healthcheck and a CI image-build gate.
 Phase 51 starts the built production image against the CI PostgreSQL service, applies
 migrations and reference seeds through the image itself, and verifies liveness and
 readiness over HTTP before the workflow can pass.
+
+Phase 53 makes container smoke failures actionable by capturing runtime logs on error
+and guaranteeing container cleanup on every exit path.
 
 Phase 52 runs the production API image as the built-in unprivileged `node` user and
 asserts the runtime identity in CI before checking liveness and readiness.

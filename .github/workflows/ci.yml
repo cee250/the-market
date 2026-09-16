@@ -74,7 +74,15 @@ jobs:
             -e JWT_SECRET="$JWT_SECRET" \
             -e CORS_ORIGIN="$CORS_ORIGIN" \
             market-api:ci
-          trap 'docker rm -f market-api-ci >/dev/null 2>&1 || true' EXIT
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ] && docker container inspect market-api-ci >/dev/null 2>&1; then
+              docker logs market-api-ci || true
+            fi
+            docker rm -f market-api-ci >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           test "$(docker inspect --format '{{.Config.User}}' market-api-ci)" = "node"
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4000/api/health/live >/dev/null; then
@@ -83,5 +91,4 @@ jobs:
             fi
             sleep 2
           done
-          docker logs market-api-ci
           exit 1
