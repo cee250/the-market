@@ -8,7 +8,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  external_node_modules = ["@nestjs/microservices", "@nestjs/websockets", "@nestjs/websockets/socket-module.js", "serverless-http"]
+  external_node_modules = ["@nestjs/microservices", "@nestjs/websockets", "@nestjs/websockets/socket-module.js", "serverless-http", "mariadb", "better-sqlite3", "mysql2", "oracledb", "tedious", "mysql", "sqlite3"]
 
 [[redirects]]
   from = "/api/*"
