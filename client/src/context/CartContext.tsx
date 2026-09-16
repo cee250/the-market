@@ -1,6 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
-import { productById } from '../data/products';
 import { PROMO_CODES, SITE } from '../config/site';
 import type { CartItem, Promo } from '../types';
 
@@ -45,7 +44,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartContextValue>(() => {
     const items: ResolvedCartItem[] = [];
     for (const item of rawItems) {
-      const product = item.product ?? productById.get(item.id);
+      const product = item.product;
       if (!product) continue;
       items.push({
         id: product.id,
@@ -72,7 +71,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       totals: { subtotal, discount, shipping, total },
       promo,
       addItem: (productId, qty = 1, snapshot) => {
-        const product = snapshot ?? productById.get(productId);
+        const product = snapshot;
         if (!product || product.stock === 0) return;
         setRawItems((prev) => {
           const existing = prev.find((i) => i.id === productId);
@@ -85,8 +84,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
       },
       setQty: (productId, qty) => {
-        const product = productById.get(productId);
-        const max = product ? product.stock : 99;
+        const existing = rawItems.find((item) => item.id === productId);
+        const max = existing?.product?.stock ?? 99;
         setRawItems((prev) =>
           qty <= 0
             ? prev.filter((i) => i.id !== productId)
