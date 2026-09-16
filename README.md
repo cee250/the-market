@@ -38,6 +38,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 47** | **Readiness contract regression coverage and release-status synchronization** | ✅ **Complete** |
 | **Phase 48** | **Dependency vulnerability remediation and CI audit enforcement** | ✅ **Complete** |
 | **Phase 49** | **CI-backed PostgreSQL end-to-end smoke verification and release-gate synchronization** | 🚧 **In progress** |
+| **Phase 50** | **Production container completeness, healthcheck, and image-build verification** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -117,6 +118,10 @@ after migrations and seed data are applied. The release gate covers startup,
 liveness/readiness, authentication, catalog discovery, authorization, vendor
 onboarding, and representative marketplace flows rather than validating only the
 compiled application.
+
+Phase 50 makes the production API image self-contained for the documented migration
+and seed workflow by including Knex configuration and database assets. It also adds a
+container liveness healthcheck and a CI image-build gate.
 
 Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 The API exposes `/api/health/live` for process liveness and `/api/health/ready` for

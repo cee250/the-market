@@ -41,3 +41,4 @@ jobs:
           E2E_DATABASE_URL: postgresql://market:market@127.0.0.1:5433/market
           ADMIN_EMAIL: admin@market.rw
           ADMIN_PASSWORD: ChangeMe123!
+      - run: docker build --file server/Dockerfile --tag market-api:ci .

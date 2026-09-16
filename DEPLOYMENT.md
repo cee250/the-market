@@ -24,7 +24,7 @@ The API disables the Express `X-Powered-By` fingerprint and sends baseline brows
 
 ## Container builds
 
-The API can be built with `docker build -f server/Dockerfile .`. The container requires the same production environment variables and an externally managed PostgreSQL database. The client remains a static Vite artifact and should be built with `npm run build -w client` and deployed to a static host with SPA fallback to `index.html`.
+The API can be built with `docker build -f server/Dockerfile .`. The image includes the compiled API, Knex configuration, migrations, and reference seeds, so an externally managed PostgreSQL database can be migrated with `npm run db:migrate -w server` and seeded with `npm run db:seed -w server` inside the release workflow. The container exposes a liveness healthcheck at `/api/health/live` and requires the same production environment variables. The client remains a static Vite artifact and should be built with `npm run build -w client` and deployed to a static host with SPA fallback to `index.html`.
 
 ## Observability expectations
 
