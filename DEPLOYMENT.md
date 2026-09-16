@@ -6,12 +6,13 @@ Set `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, and `CORS_ORIGIN` befor
 
 ## Release order
 
-1. Build and verify the release with `npm ci`, `npm run typecheck`, `npm run build`, and `npm test`.
+1. Build and verify the release with `npm ci`, `npm run audit:high`, `npm run typecheck`, `npm run build`, `npm test`, and `npm run test:e2e:smoke` against a disposable PostgreSQL database.
 2. Apply database migrations with `npm run db:migrate -w server`.
 3. Run the idempotent reference seed with `npm run db:seed -w server` only when reference data or the initial administrator is required.
 4. Start the API with `npm run start -w server` and serve the client `client/dist` through the selected static host or CDN.
 
 Never run destructive rollback commands automatically during deployment. Take a database backup before migrations and use `npm run db:rollback -w server` only as an explicitly reviewed recovery operation.
+The CI workflow provisions PostgreSQL 18, applies migrations and reference seeds through the smoke harness, and blocks the release when the running API does not satisfy its end-to-end contract.
 
 ## Health checks
 

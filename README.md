@@ -37,6 +37,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 46** | **Readiness dependency diagnostics and production health observability** | ✅ **Complete** |
 | **Phase 47** | **Readiness contract regression coverage and release-status synchronization** | ✅ **Complete** |
 | **Phase 48** | **Dependency vulnerability remediation and CI audit enforcement** | ✅ **Complete** |
+| **Phase 49** | **CI-backed PostgreSQL end-to-end smoke verification and release-gate synchronization** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -110,6 +111,12 @@ Phase 48 upgrades the API runtime and CLI to NestJS 12, which resolves the vulne
 to CI so high-severity dependency vulnerabilities fail before release. The repository
 currently has no file-upload interceptors, and the compatibility suite passes after
 the framework upgrade.
+
+Phase 49 adds a real PostgreSQL service to CI and runs the API smoke suite against it
+after migrations and seed data are applied. The release gate covers startup,
+liveness/readiness, authentication, catalog discovery, authorization, vendor
+onboarding, and representative marketplace flows rather than validating only the
+compiled application.
 
 Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 The API exposes `/api/health/live` for process liveness and `/api/health/ready` for
