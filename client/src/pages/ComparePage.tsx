@@ -6,17 +6,17 @@ import { RatingStars } from '../components/ui/RatingStars';
 import { useCompare } from '../context/CompareContext';
 import { useToast } from '../context/ToastContext';
 import { useCart } from '../context/CartContext';
-import { productById } from '../data/products';
 import type { Product } from '../types';
+import { useAsync } from '../hooks/useAsync';
+import { api } from '../services/api';
 
 export function ComparePage() {
   const compare = useCompare();
   const cart = useCart();
   const { toast } = useToast();
 
-  const products = compare.ids
-    .map((id) => productById.get(id))
-    .filter((p): p is Product => Boolean(p));
+  const productsRequest = useAsync(async () => (await Promise.all(compare.ids.map((id) => api.getProduct(id)))).filter((p): p is Product => Boolean(p)), [compare.ids.join('|')]);
+  const products = productsRequest.data ?? [];
 
   // Union of spec labels, in first-seen order
   const specLabels: string[] = [];
