@@ -1,8 +1,7 @@
 import serverless from 'serverless-http';
-import type { Handler } from 'aws-lambda';
 import { createApp } from '../../server/src/main';
 
-let handlerPromise: Promise<Handler> | undefined;
+let handlerPromise: Promise<ReturnType<typeof serverless>> | undefined;
 
 async function getHandler(): Promise<Handler> {
   if (!handlerPromise) {
@@ -11,10 +10,10 @@ async function getHandler(): Promise<Handler> {
   return handlerPromise;
 }
 
-export const handler: Handler = async (event, context, callback) => {
+export const handler = async (event: Parameters<ReturnType<typeof serverless>>[0], context: Parameters<ReturnType<typeof serverless>>[1]) => {
   try {
     const appHandler = await getHandler();
-    return appHandler(event, context, callback);
+    return appHandler(event, context);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown API startup error';
     console.error('[netlify-api] startup failure', message);
