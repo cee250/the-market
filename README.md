@@ -11,7 +11,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 
 > **Implementation status:** The original architecture roadmap is complete through
 > Phase 18. The project is now tracked in numbered hardening and production-readiness
-> increments. **Phase 47 is complete**; the repository is ready for the next increment.
+> increments. **Phase 54 is complete**, and **Phase 55 is in progress**.
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -41,8 +41,9 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 50** | **Production container completeness, healthcheck, and image-build verification** | ✅ **Complete** |
 | **Phase 51** | **Production container migration, startup, and liveness/readiness smoke verification** | ✅ **Complete** |
 | **Phase 52** | **Non-root production container hardening and runtime identity verification** | ✅ **Complete** |
-| **Phase 53** | **CI container failure diagnostics and cleanup reliability** | 🚧 **In progress** |
-| **Phase 54** | **CI least-privilege permissions, concurrency control, and bounded execution** | 🚧 **In progress** |
+| **Phase 53** | **CI container failure diagnostics and cleanup reliability** | ✅ **Complete** |
+| **Phase 54** | **CI least-privilege permissions, concurrency control, and bounded execution** | ✅ **Complete** |
+| **Phase 55** | **Immutable GitHub Actions pinning and CI supply-chain hardening** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -133,6 +134,10 @@ readiness over HTTP before the workflow can pass.
 
 Phase 53 makes container smoke failures actionable by capturing runtime logs on error
 and guaranteeing container cleanup on every exit path.
+
+Phase 55 pins third-party GitHub Actions to immutable commit SHAs while retaining
+version comments for maintainability, preventing a mutable release tag from changing
+the code executed by the CI workflow.
 
 Phase 54 restricts the workflow token to read-only repository contents, cancels stale
 runs for the same branch or pull request, and bounds the verification job to prevent
