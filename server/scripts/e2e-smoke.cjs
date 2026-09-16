@@ -117,6 +117,15 @@ async function main() {
   assert(products.response.status === 200, `marketplace products returned ${products.response.status}`);
   assert(Array.isArray(products.body?.items), 'marketplace products did not return an items array');
 
+  const firstProduct = products.body.items[0];
+  if (firstProduct) {
+    const productKey = firstProduct.slug ?? firstProduct.id;
+    const detail = await request(`/marketplace/products/${encodeURIComponent(productKey)}`);
+    assert(detail.response.status === 200, `product detail returned ${detail.response.status}`);
+    const reviews = await request(`/marketplace/products/${encodeURIComponent(productKey)}/reviews`);
+    assert(reviews.response.status === 200 && Array.isArray(reviews.body), 'product reviews did not return an array');
+  }
+
   const categories = await request('/categories');
   assert(categories.response.status === 200, `categories returned ${categories.response.status}`);
   assert(Array.isArray(categories.body), 'categories did not return an array');
@@ -124,7 +133,19 @@ async function main() {
   const protectedResponse = await request('/auth/me');
   assert([401, 403].includes(protectedResponse.response.status), `unauthenticated /auth/me returned ${protectedResponse.response.status}`);
 
-  console.log('[e2e] PASS health/live, health/ready, marketplace/products, categories, auth/me authorization');
+  const email = `e2e-${Date.now()}@market.test`;
+  const registration = await request('/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Customer', email, password: 'E2ePassword123!' }),
+  });
+  assert(registration.response.status === 201, `registration returned ${registration.response.status}`);
+  const setCookie = registration.response.headers.get('set-cookie');
+  assert(setCookie?.startsWith('market_session='), 'registration did not issue a session cookie');
+  const authenticated = await request('/auth/me', { headers: { Cookie: setCookie.split(';')[0] } });
+  assert(authenticated.response.status === 200 && authenticated.body?.user?.email === email, 'authenticated /auth/me response is invalid');
+
+  console.log('[e2e] PASS health probes, catalog listing/detail/reviews, categories, authorization, registration, and session lookup');
 }
 
 main()
