@@ -112,6 +112,19 @@ async function main() {
   assert(live.body?.status === 'ok' && live.body?.api === 'up', 'liveness payload is invalid');
   const ready = await waitFor('/health/ready', 200);
   assert(ready.body?.status === 'ok' && ready.body?.database === 'up', 'readiness payload is invalid');
+  assert(ready.response.headers.get('x-request-id'), 'readiness response did not include a request ID');
+  assert(ready.response.headers.get('cache-control') === 'no-store', 'API response did not disable caching');
+  const throttledRequests = [];
+  for (let attempt = 0; attempt < 11; attempt += 1) {
+    throttledRequests.push(await request('/auth/verify-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: `invalid-phase-45-token-${attempt}-with-enough-length` }),
+    }));
+  }
+  assert(throttledRequests.slice(0, 10).every((result) => result.response.status === 400), 'auth validation requests did not reach the API limit');
+  assert(throttledRequests[10].response.status === 429, 'auth rate limiter did not reject the over-limit request');
+  assert(throttledRequests[10].response.headers.get('retry-after'), 'rate-limited response did not include Retry-After');
 
   const products = await request('/marketplace/products');
   assert(products.response.status === 200, `marketplace products returned ${products.response.status}`);
@@ -537,7 +550,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog filters, authentication failures/logout, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, product updates, variant maintenance, inventory maintenance, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, notification read states, and review protection');
+  console.log('[e2e] PASS health, request IDs/cache policy/rate limiting, catalog filters, authentication failures/logout, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, product updates, variant maintenance, inventory maintenance, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, notification read states, and review protection');
 }
 
 main()
