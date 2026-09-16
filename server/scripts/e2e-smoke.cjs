@@ -224,6 +224,13 @@ async function main() {
   });
   assert(activatedVendor.response.status === 201 && activatedVendor.body?.status === 'ACTIVE', `admin activation did not activate vendor: HTTP ${activatedVendor.response.status} ${JSON.stringify(activatedVendor.body)}`);
 
+  const vendorEntitlement = await request('/packages/vendor/entitlement', { headers: vendorHeaders });
+  assert(vendorEntitlement.response.status === 200 && vendorEntitlement.body?.status === 'ACTIVE' && vendorEntitlement.body?.productLimit === 20, 'vendor entitlement is invalid after activation');
+  const vendorSubscription = await request('/subscriptions/vendor', { headers: vendorHeaders });
+  assert(vendorSubscription.response.status === 200 && vendorSubscription.body?.subscription?.status === 'ACTIVE' && vendorSubscription.body.subscription.remainingDays > 0, 'vendor subscription is invalid after activation');
+  const customerVendorAnalytics = await request('/analytics/vendor', { headers: sessionHeaders });
+  assert(customerVendorAnalytics.response.status === 403, 'customer was allowed to access vendor analytics');
+
   const productCreation = await request('/products', {
     method: 'POST',
     headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
@@ -348,12 +355,20 @@ async function main() {
   assert(publicReviews.response.status === 200 && publicReviews.body.some((item) => item.id === review.body.id), 'submitted product review was not publicly visible');
   const paidCustomerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
   assert(paidCustomerOrder.response.status === 200 && paidCustomerOrder.body?.status === 'PAID', 'customer order did not transition to PAID');
+  const vendorAnalytics = await request('/analytics/vendor', { headers: vendorHeaders });
+  assert(vendorAnalytics.response.status === 200 && vendorAnalytics.body?.scope === 'vendor' && vendorAnalytics.body.totalOrders === 1 && vendorAnalytics.body.unitsSold === 1, 'vendor analytics summary is invalid');
+  const adminAnalytics = await request('/analytics/admin', { headers: adminHeaders });
+  assert(adminAnalytics.response.status === 200 && adminAnalytics.body?.scope === 'platform' && adminAnalytics.body.totalOrders >= 1, 'admin analytics summary is invalid');
+  const adminStats = await request('/admin/stats', { headers: adminHeaders });
+  assert(adminStats.response.status === 200 && adminStats.body?.orders >= 1 && adminStats.body?.paidMarketplaceRevenue >= 17500, 'admin platform stats are invalid');
+  const auditLogs = await request('/admin/audit-logs?page=1&limit=100', { headers: adminHeaders });
+  assert(auditLogs.response.status === 200 && Array.isArray(auditLogs.body?.items) && auditLogs.body.items.some((item) => item.action === 'VENDOR_PAYMENT_VERIFIED'), 'admin audit log does not contain payment verification');
 
   const vendorDashboard = await request('/shops/dashboard', { headers: vendorHeaders });
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, variants, inventory integrity, payment review, activation, product publishing, idempotent checkout, order payment, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, entitlements, subscriptions, variants, inventory, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
 }
 
 main()
