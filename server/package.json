@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
+    "check:production-config": "npm run build && node scripts/check-production-config.cjs",
     "db:start": "node scripts/dev-db.cjs",
     "db:migrate": "knex --knexfile knexfile.cjs migrate:latest",
     "db:rollback": "knex --knexfile knexfile.cjs migrate:rollback",
