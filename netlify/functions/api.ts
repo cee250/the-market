@@ -1,6 +1,8 @@
 import serverless from 'serverless-http';
 import { createApp } from '../../server/src/main';
 
+process.env.NETLIFY_FUNCTION_NAME ??= 'api';
+
 let handlerPromise: Promise<ReturnType<typeof serverless>> | undefined;
 
 async function getHandler(): Promise<Handler> {
