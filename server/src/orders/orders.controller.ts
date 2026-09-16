@@ -21,6 +21,7 @@ export class OrdersController {
   @Delete('cart/items/:id') remove(@Req() request: RequestWithUser, @Param('id') id: string) { return this.orders.remove(request.user, id); }
   @Post('checkout') checkout(@Req() request: RequestWithUser, @Body() body: CheckoutDto) { const key = request.header('Idempotency-Key')?.trim(); return this.orders.checkout(request.user, body, key); }
   @Get('orders') listOrders(@Req() request: RequestWithUser) { return this.orders.orders(request.user); }
+  @Get('orders/:id') getOrder(@Req() request: RequestWithUser, @Param('id') id: string) { return this.orders.order(request.user, id); }
   @Get('vendor-orders') vendorOrders(@Req() request: RequestWithUser) { return this.orders.vendorOrders(request.user); }
   @Patch('vendor-orders/:id/status') updateVendorOrderStatus(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: FulfillmentStatusDto) { return this.orders.updateVendorOrderStatus(request.user, id, body.status); }
   @Get('admin/orders') adminOrders(@Req() request: RequestWithUser) { return this.orders.adminOrders(request.user); }
