@@ -1,5 +1,5 @@
 [build]
-  command = "npm run db:migrate -w server && npm run build -w client"
+  command = "npm install --include=dev --workspaces && npm run db:migrate -w server && npm run build -w client"
   publish = "client/dist"
   functions = "netlify/functions"
 
