@@ -42,6 +42,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 51** | **Production container migration, startup, and liveness/readiness smoke verification** | ✅ **Complete** |
 | **Phase 52** | **Non-root production container hardening and runtime identity verification** | ✅ **Complete** |
 | **Phase 53** | **CI container failure diagnostics and cleanup reliability** | 🚧 **In progress** |
+| **Phase 54** | **CI least-privilege permissions, concurrency control, and bounded execution** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -132,6 +133,10 @@ readiness over HTTP before the workflow can pass.
 
 Phase 53 makes container smoke failures actionable by capturing runtime logs on error
 and guaranteeing container cleanup on every exit path.
+
+Phase 54 restricts the workflow token to read-only repository contents, cancels stale
+runs for the same branch or pull request, and bounds the verification job to prevent
+uncontrolled CI resource consumption.
 
 Phase 52 runs the production API image as the built-in unprivileged `node` user and
 asserts the runtime identity in CI before checking liveness and readiness.
