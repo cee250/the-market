@@ -196,6 +196,12 @@ async function main() {
   const adminCookie = adminLogin.response.headers.get('set-cookie');
   assert(adminCookie?.startsWith('market_session='), 'admin login did not issue a session cookie');
   const adminHeaders = { Cookie: adminCookie.split(';')[0] };
+  const customerAdminAccess = await request('/admin/stats', { headers: sessionHeaders });
+  assert(customerAdminAccess.response.status === 403, 'customer was allowed to access admin stats');
+  const vendorAdminAccess = await request('/payments/admin', { headers: vendorHeaders });
+  assert(vendorAdminAccess.response.status === 403, 'vendor was allowed to access admin payments');
+  const customerVendorAccess = await request('/vendor-orders', { headers: sessionHeaders });
+  assert(customerVendorAccess.response.status === 403, 'customer was allowed to access vendor fulfillment orders');
   const adminPayments = await request('/payments/admin', { headers: adminHeaders });
   assert(adminPayments.response.status === 200 && Array.isArray(adminPayments.body), 'admin payment queue is invalid');
   const pendingPayment = adminPayments.body.find((payment) => payment.id === vendorPayment.body.id);
@@ -239,13 +245,21 @@ async function main() {
     body: JSON.stringify({ productId: productCreation.body.id, quantity: 1 }),
   });
   assert(addToCart.response.status === 201 && addToCart.body?.items?.length === 1, 'customer could not add published product to cart');
+  const checkoutKey = `e2e-checkout-${Date.now()}`;
+  const checkoutInput = { customerName: 'E2E Customer', phone: '0788112233', email, deliveryAddress: 'KG 1 Ave, Kigali', fulfillmentMethod: 'DELIVERY', paymentMethod: 'mobile-money' };
   const checkout = await request('/checkout', {
     method: 'POST',
-    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': `e2e-checkout-${Date.now()}` },
-    body: JSON.stringify({ customerName: 'E2E Customer', phone: '0788112233', email, deliveryAddress: 'KG 1 Ave, Kigali', fulfillmentMethod: 'DELIVERY', paymentMethod: 'mobile-money' }),
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': checkoutKey },
+    body: JSON.stringify(checkoutInput),
   });
   assert(checkout.response.status === 201 && checkout.body?.id, `checkout failed: HTTP ${checkout.response.status} ${JSON.stringify(checkout.body)}`);
   const orderId = checkout.body.id;
+  const duplicateCheckout = await request('/checkout', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': checkoutKey },
+    body: JSON.stringify(checkoutInput),
+  });
+  assert(duplicateCheckout.response.status === 201 && duplicateCheckout.body?.id === orderId, `duplicate checkout did not return the original order: HTTP ${duplicateCheckout.response.status} ${JSON.stringify(duplicateCheckout.body)}`);
   const customerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
   assert(customerOrder.response.status === 200 && customerOrder.body?.vendorOrders?.length === 1, 'created order detail is invalid');
   const orderPayment = await request(`/payments/orders/${orderId}/intent`, {
@@ -285,6 +299,12 @@ async function main() {
     body: JSON.stringify({ rating: 5, comment: 'Excellent E2E test product.' }),
   });
   assert(review.response.status === 201 && review.body?.product_id === productCreation.body.id, 'delivered customer could not submit a product review');
+  const duplicateReview = await request(`/products/${productCreation.body.id}/reviews`, {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rating: 4, comment: 'A duplicate review should be rejected.' }),
+  });
+  assert(duplicateReview.response.status === 400, 'customer was allowed to submit a duplicate product review');
   const publicReviews = await request(`/marketplace/products/${encodeURIComponent(publishedProduct.body.slug)}/reviews`);
   assert(publicReviews.response.status === 200 && publicReviews.body.some((item) => item.id === review.body.id), 'submitted product review was not publicly visible');
   const paidCustomerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
@@ -294,7 +314,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, vendor onboarding, payment review, activation, product publishing, checkout, order payment, delivery notifications, and reviews');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, payment review, activation, product publishing, idempotent checkout, order payment, delivery notifications, and review protection');
 }
 
 main()
