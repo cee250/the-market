@@ -15,7 +15,11 @@ async function getHandler(): Promise<Handler> {
 export const handler = async (event: Parameters<ReturnType<typeof serverless>>[0], context: Parameters<ReturnType<typeof serverless>>[1]) => {
   try {
     const appHandler = await getHandler();
-    return appHandler(event, context);
+    const requestEvent = { ...event } as typeof event & { path?: string; rawPath?: string };
+    const stripFunctionPrefix = (path?: string) => path?.replace(/^\/\.netlify\/functions\/api/, '') || path;
+    requestEvent.path = stripFunctionPrefix(requestEvent.path);
+    requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
+    return appHandler(requestEvent, context);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown API startup error';
     console.error('[netlify-api] startup failure', message);
