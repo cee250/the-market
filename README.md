@@ -44,6 +44,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 53** | **CI container failure diagnostics and cleanup reliability** | ✅ **Complete** |
 | **Phase 54** | **CI least-privilege permissions, concurrency control, and bounded execution** | ✅ **Complete** |
 | **Phase 55** | **Immutable GitHub Actions pinning and CI supply-chain hardening** | 🚧 **In progress** |
+| **Phase 56** | **Release manifest generation and CI provenance artifact publication** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -138,6 +139,10 @@ and guaranteeing container cleanup on every exit path.
 Phase 55 pins third-party GitHub Actions to immutable commit SHAs while retaining
 version comments for maintainability, preventing a mutable release tag from changing
 the code executed by the CI workflow.
+
+Phase 56 generates a release manifest containing the application version, verified
+commit, CI run identifier, Node runtime, platform, and package-lock SHA-256 digest.
+CI publishes the manifest as a 30-day artifact for release traceability.
 
 Phase 54 restricts the workflow token to read-only repository contents, cancels stale
 runs for the same branch or pull request, and bounds the verification job to prevent

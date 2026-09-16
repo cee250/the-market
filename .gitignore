@@ -20,6 +20,9 @@ logs
 *.log
 npm-debug.log*
 
+# CI release provenance output
+release-manifest.json
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
