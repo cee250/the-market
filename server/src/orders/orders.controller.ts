@@ -19,7 +19,7 @@ export class OrdersController {
   @Post('cart/items') add(@Req() request: RequestWithUser, @Body() body: CartItemDto) { return this.orders.add(request.user, body.productId, body.quantity, body.variantId, body.selectedOptions); }
   @Patch('cart/items/:id') quantity(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: QuantityDto) { return this.orders.updateQuantity(request.user, id, body.quantity); }
   @Delete('cart/items/:id') remove(@Req() request: RequestWithUser, @Param('id') id: string) { return this.orders.remove(request.user, id); }
-  @Post('checkout') checkout(@Req() request: RequestWithUser, @Body() body: CheckoutDto) { return this.orders.checkout(request.user, body); }
+  @Post('checkout') checkout(@Req() request: RequestWithUser, @Body() body: CheckoutDto) { const key = request.header('Idempotency-Key')?.trim(); return this.orders.checkout(request.user, body, key); }
   @Get('orders') listOrders(@Req() request: RequestWithUser) { return this.orders.orders(request.user); }
   @Get('vendor-orders') vendorOrders(@Req() request: RequestWithUser) { return this.orders.vendorOrders(request.user); }
   @Patch('vendor-orders/:id/status') updateVendorOrderStatus(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: FulfillmentStatusDto) { return this.orders.updateVendorOrderStatus(request.user, id, body.status); }
