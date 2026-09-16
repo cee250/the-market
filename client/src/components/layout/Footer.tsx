@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone, ShoppingBag } from 'lucide-react';
-import { CATEGORIES } from '../../data/categories';
 import { SITE } from '../../config/site';
 import { useToast } from '../../context/ToastContext';
+import { useAsync } from '../../hooks/useAsync';
+import { api } from '../../services/api';
 
 const PAYMENTS = ['MTN MoMo', 'Airtel Money', 'Visa', 'Mastercard'];
 
@@ -47,6 +48,7 @@ function XIcon({ size = 16 }: { size?: number }) {
 export function Footer() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
+  const categories = useAsync(() => api.getCategories(), []);
 
   const subscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +97,7 @@ export function Footer() {
                 All Products
               </Link>
             </li>
-            {CATEGORIES.map((c) => (
+            {(categories.data ?? []).map((c) => (
               <li key={c.slug}>
                 <Link to={`/category/${c.slug}`} className="transition hover:text-emerald-400">
                   {c.shortName}
