@@ -10,6 +10,15 @@ async function bootstrap(): Promise<void> {
 
   // All routes are served under /api (e.g. GET /api/health)
   app.setGlobalPrefix('api');
+  const httpAdapter = app.getHttpAdapter().getInstance();
+  httpAdapter.disable('x-powered-by');
+  httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+  });
 
   const corsOrigin = config.get<string>('CORS_ORIGIN');
   app.enableCors({

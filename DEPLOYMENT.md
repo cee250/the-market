@@ -17,6 +17,10 @@ Never run destructive rollback commands automatically during deployment. Take a 
 
 Use `GET /api/health/live` for a process-level liveness probe. Use `GET /api/health/ready` for readiness; it verifies the database connection and returns a service-unavailable response when the database is down. Route traffic only after readiness succeeds.
 
+## Security and performance hardening
+
+The API disables the Express `X-Powered-By` fingerprint and sends baseline browser protection headers including `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a restrictive `Permissions-Policy`. Keep these headers intact at the reverse proxy layer. The client uses route-level code splitting so the initial storefront download is smaller; configure the static host to serve generated asset files and fall back to `index.html` only for application routes.
+
 ## Container builds
 
 The API can be built with `docker build -f server/Dockerfile .`. The container requires the same production environment variables and an externally managed PostgreSQL database. The client remains a static Vite artifact and should be built with `npm run build -w client` and deployed to a static host with SPA fallback to `index.html`.
