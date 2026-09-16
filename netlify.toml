@@ -1,17 +1,13 @@
 [build]
-  command = "npm install --include=dev --workspaces && npm run build -w client"
+  command = "npm run build -w client"
   publish = "client/dist"
-  functions = "netlify/functions"
-
-[functions]
-  external_node_modules = ["@nestjs/microservices", "@nestjs/websockets", "mysql2", "sqlite3", "better-sqlite3", "oracledb", "tedious", "pg-native"]
 
 [build.environment]
   NODE_VERSION = "20"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  to = "https://api.market.rw/api/:splat"
   status = 200
   force = true
 
@@ -19,6 +15,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true
 
 [[headers]]
   for = "/*"
