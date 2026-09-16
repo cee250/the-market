@@ -23,8 +23,13 @@ export class HealthController {
     try {
       await this.db.connection.raw('SELECT 1');
       databaseLatencyMs = Math.round(Number(process.hrtime.bigint() - startedAt) / 10_000) / 100;
-    } catch {
+    } catch (error) {
       database = 'down';
+      const databaseError = error as { code?: string; message?: string };
+      console.error('[health] database check failed', {
+        code: databaseError.code,
+        message: databaseError.message?.slice(0, 180),
+      });
     }
 
     const payload: HealthResponse = {
