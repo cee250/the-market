@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeftRight,
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Carousel, CarouselItem } from '../components/product/Carousel';
 import { ProductCard } from '../components/product/ProductCard';
+import { getMarketplaceReviews } from '../services/marketplace';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Price } from '../components/ui/Price';
@@ -26,41 +27,11 @@ import { useCompare, COMPARE_LIMIT } from '../context/CompareContext';
 import { useToast } from '../context/ToastContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAsync } from '../hooks/useAsync';
-import { cx, formatPrice, hashString } from '../lib/utils';
+import { cx, formatPrice } from '../lib/utils';
 import { api } from '../services/api';
 
 const TABS = ['Description', 'Specifications', 'Reviews'] as const;
 type Tab = (typeof TABS)[number];
-
-const REVIEW_NAMES = ['Eric', 'Aline', 'Jean', 'Claudine', 'Dave', 'Keza', 'Pierre', 'Nadine'];
-const REVIEW_COMMENTS = [
-  'Delivered fast and the quality exceeded my expectations. Highly recommended!',
-  'Exactly as described. Packaging was excellent and the support team was responsive.',
-  'Great value for money. Will definitely buy again from Market.',
-  'Solid product and a fair price. Delivery to Kigali took just two days.',
-  'Very happy with the purchase — the team even called to confirm my order.',
-];
-
-interface MockReview {
-  name: string;
-  rating: number;
-  date: string;
-  comment: string;
-}
-
-function mockReviews(seed: string): MockReview[] {
-  const h = hashString(seed);
-  return Array.from({ length: 3 }).map((_, i) => ({
-    name: REVIEW_NAMES[(h + i * 3) % REVIEW_NAMES.length],
-    rating: h % 2 === 0 ? 5 : 4,
-    date: new Date(Date.now() - ((h % 40) + i * 12 + 4) * 86400000).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }),
-    comment: REVIEW_COMMENTS[(h + i * 2) % REVIEW_COMMENTS.length],
-  }));
-}
 
 function DetailSkeleton() {
   return (
@@ -100,10 +71,7 @@ export function ProductPage() {
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState<Tab>('Description');
 
-  const reviews = useMemo(
-    () => (product.data ? mockReviews(product.data.id) : []),
-    [product.data],
-  );
+  const reviews = useAsync(() => (product.data ? getMarketplaceReviews(product.data.slug ?? product.data.id) : Promise.resolve([])), [product.data?.slug, product.data?.id]);
 
   if (product.loading) {
     return (
@@ -369,16 +337,16 @@ export function ProductPage() {
 
           {tab === 'Reviews' && (
             <div className="max-w-3xl space-y-5">
-              {reviews.map((r) => (
-                <article key={r.name + r.date} className="rounded-2xl border border-slate-100 p-5">
+              {(reviews.data ?? []).map((r) => (
+                <article key={r.id} className="rounded-2xl border border-slate-100 p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
-                        {r.name.charAt(0)}
+                        {r.reviewer_name.charAt(0)}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">{r.name}</p>
-                        <p className="text-xs text-slate-400">{r.date} · Verified purchase</p>
+                        <p className="text-sm font-semibold text-slate-900">{r.reviewer_name}</p>
+                        <p className="text-xs text-slate-400">{new Date(r.created_at).toLocaleDateString('en-GB')} · Verified purchase</p>
                       </div>
                     </div>
                     <RatingStars value={r.rating} size={13} />
@@ -386,13 +354,7 @@ export function ProductPage() {
                   <p className="mt-3 text-sm leading-relaxed text-slate-600">{r.comment}</p>
                 </article>
               ))}
-              <button
-                type="button"
-                onClick={() => toast('Reviews go live with the backend phase — stay tuned!', 'info')}
-                className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Write a review
-              </button>
+              {(reviews.data ?? []).length === 0 && <p className="text-sm text-slate-500">No reviews yet.</p>}
             </div>
           )}
         </div>

@@ -1,0 +1,3 @@
+/** @param {import('knex').Knex} knex */
+exports.up = async (knex) => { await knex.schema.createTable('product_reviews', (t) => { t.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()')); t.uuid('product_id').notNullable().references('id').inTable('products').onDelete('CASCADE'); t.uuid('user_id').references('id').inTable('users').onDelete('SET NULL'); t.string('reviewer_name').notNullable(); t.integer('rating').notNullable(); t.text('comment').notNullable(); t.timestamp('created_at').notNullable().defaultTo(knex.fn.now()); t.index(['product_id', 'created_at']); }); };
+exports.down = async (knex) => { await knex.schema.dropTableIfExists('product_reviews'); };
