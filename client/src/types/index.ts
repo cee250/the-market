@@ -89,5 +89,5 @@ export interface Order {
   customer: CustomerInfo;
   paymentMethod: PaymentMethod;
   createdAt: string;
-  status: 'confirmed';
+  status: string;
 }

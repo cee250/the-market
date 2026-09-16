@@ -7,7 +7,7 @@ import { useAsync } from '../hooks/useAsync';
 import type { Order } from '../types';
 
 interface ServerOrder { id: string; order_number?: string; created_at?: string; total: number; status?: string; order_items?: { id: string; product_name: string; quantity: number; unit_price: number }[]; }
-const normalize = (order: ServerOrder): Order => ({ id: order.order_number ?? order.id, items: (order.order_items ?? []).map((item) => ({ id: item.id, name: item.product_name, image: 'https://placehold.co/80x80?text=Market', price: item.unit_price, qty: item.quantity })), subtotal: order.total, discount: 0, shipping: 0, total: order.total, customer: { name: '', phone: '', email: '', address: '', city: '' }, paymentMethod: 'mtn-momo', createdAt: order.created_at ?? new Date().toISOString(), status: 'confirmed' });
+const normalize = (order: ServerOrder): Order => ({ id: order.order_number ?? order.id, items: (order.order_items ?? []).map((item) => ({ id: item.id, name: item.product_name, image: 'https://placehold.co/80x80?text=Market', price: item.unit_price, qty: item.quantity })), subtotal: order.total, discount: 0, shipping: 0, total: order.total, customer: { name: '', phone: '', email: '', address: '', city: '' }, paymentMethod: 'mtn-momo', createdAt: order.created_at ?? new Date().toISOString(), status: (order.status ?? 'PENDING_PAYMENT').replaceAll('_', ' ').toLowerCase() });
 export function OrdersPage() {
   const request = useAsync(async () => { try { return (await ordersApi.orders() as ServerOrder[]).map(normalize); } catch { return getOrders(); } }, []);
   const orders = request.data ?? [];
