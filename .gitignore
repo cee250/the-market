@@ -23,6 +23,9 @@ npm-debug.log*
 # CI release provenance output
 release-manifest.json
 
+# Netlify local project metadata
+.netlify
+
 # Editor
 .vscode/*
 !.vscode/extensions.json
