@@ -15,9 +15,14 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   }
 
   const jwtSecret = String(config.JWT_SECRET ?? '');
-  if (!jwtSecret || jwtSecret.includes('change-me')) {
-    // Phase 1 keeps the server running with a dev secret; warn loudly.
-    // From Phase 2 (auth) this must become a hard failure in non-dev.
+  const nodeEnv = String(config.NODE_ENV ?? 'development');
+  const corsOrigin = String(config.CORS_ORIGIN ?? '');
+  if (nodeEnv === 'production') {
+    if (jwtSecret.length < 32 || jwtSecret.includes('change-me')) {
+      throw new Error('JWT_SECRET must be a strong, unique secret of at least 32 characters in production.');
+    }
+    if (!corsOrigin) throw new Error('CORS_ORIGIN must be explicitly configured in production.');
+  } else if (!jwtSecret || jwtSecret.includes('change-me')) {
     // eslint-disable-next-line no-console
     console.warn('[config] WARNING: JWT_SECRET is not set to a real secret — do not use this for production.');
   }
@@ -27,6 +32,7 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
     PORT: port,
     JWT_SECRET: jwtSecret || 'dev-only-secret-change-me-in-production',
     JWT_EXPIRES_IN: config.JWT_EXPIRES_IN ?? '15m',
-    NODE_ENV: config.NODE_ENV ?? 'development',
+    NODE_ENV: nodeEnv,
+    CORS_ORIGIN: corsOrigin,
   };
 }

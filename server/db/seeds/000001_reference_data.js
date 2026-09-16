@@ -146,6 +146,9 @@ exports.seed = async (knex) => {
   // ── Super admin (bcrypt-hashed) ────────────────────────────────────────
   const email = process.env.ADMIN_EMAIL ?? 'admin@market.rw';
   const password = process.env.ADMIN_PASSWORD ?? 'ChangeMe123!';
+  if (process.env.NODE_ENV === 'production' && (password === 'ChangeMe123!' || password.length < 12)) {
+    throw new Error('ADMIN_PASSWORD must be explicitly configured with at least 12 characters in production.');
+  }
   const passwordHash = await bcrypt.hash(password, 12);
   await upsert(knex, 'users', { email }, {
     name: 'Super Admin',
