@@ -398,9 +398,48 @@ async function main() {
     body: JSON.stringify({ status: 'PAID', providerReference: 'E2E-PAID' }),
   });
   assert(verifiedOrderPayment.response.status === 201 && verifiedOrderPayment.body?.status === 'PAID', 'admin could not verify order payment');
+  const secondCartItem = await request('/cart/items', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId: productCreation.body.id, quantity: 1 }),
+  });
+  assert(secondCartItem.response.status === 201 && secondCartItem.body?.items?.length === 1, 'customer could not create a second cart order');
+  const failedCheckout = await request('/checkout', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': `e2e-failed-${Date.now()}` },
+    body: JSON.stringify({ ...checkoutInput, deliveryAddress: 'KG 2 Ave, Kigali' }),
+  });
+  assert(failedCheckout.response.status === 201 && failedCheckout.body?.id, 'failed-payment checkout could not be created');
+  const failedOrderId = failedCheckout.body.id;
+  const failedIntent = await request(`/payments/orders/${failedOrderId}/intent`, {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ provider: 'test-provider' }),
+  });
+  assert(failedIntent.response.status === 201 && failedIntent.body?.status === 'PENDING', 'failed-payment intent was not created');
+  const failedVerification = await request(`/payments/orders/${failedIntent.body.id}/verify`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'FAILED', providerReference: 'E2E-FAILED', failureReason: 'E2E decline' }),
+  });
+  assert(failedVerification.response.status === 201 && failedVerification.body?.status === 'FAILED', 'admin could not record a failed payment');
+  const duplicateVerification = await request(`/payments/orders/${failedIntent.body.id}/verify`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'PAID', providerReference: 'E2E-LATE-PAID' }),
+  });
+  assert(duplicateVerification.response.status === 400, 'resolved payment could be verified twice');
+  const failedCustomerOrder = await request(`/orders/${failedOrderId}`, { headers: sessionHeaders });
+  assert(failedCustomerOrder.response.status === 200 && failedCustomerOrder.body?.status === 'CANCELLED', 'failed payment did not cancel the order');
+  const customerOrders = await request('/orders', { headers: sessionHeaders });
+  assert(customerOrders.response.status === 200 && customerOrders.body.length >= 2, 'customer order list omitted the failed order');
+  const adminOrders = await request('/admin/orders', { headers: adminHeaders });
+  assert(adminOrders.response.status === 200 && adminOrders.body.some((order) => order.id === orderId) && adminOrders.body.some((order) => order.id === failedOrderId), 'admin order list omitted marketplace orders');
   const vendorOrderList = await request('/vendor-orders', { headers: vendorHeaders });
-  assert(vendorOrderList.response.status === 200 && vendorOrderList.body?.length === 1, 'vendor did not receive the created order');
-  const vendorOrderId = vendorOrderList.body[0].id;
+  assert(vendorOrderList.response.status === 200 && vendorOrderList.body?.length >= 2, 'vendor did not receive both marketplace orders');
+  const paidVendorOrder = vendorOrderList.body.find((vendorOrder) => vendorOrder.order_id === orderId);
+  assert(paidVendorOrder?.id, 'vendor paid order was not visible in fulfillment list');
+  const vendorOrderId = paidVendorOrder.id;
   const fulfillmentUpdate = await request(`/vendor-orders/${vendorOrderId}/status`, {
     method: 'PATCH',
     headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
@@ -434,7 +473,7 @@ async function main() {
   const paidCustomerOrder = await request(`/orders/${orderId}`, { headers: sessionHeaders });
   assert(paidCustomerOrder.response.status === 200 && paidCustomerOrder.body?.status === 'PAID', 'customer order did not transition to PAID');
   const vendorAnalytics = await request('/analytics/vendor', { headers: vendorHeaders });
-  assert(vendorAnalytics.response.status === 200 && vendorAnalytics.body?.scope === 'vendor' && vendorAnalytics.body.totalOrders === 1 && vendorAnalytics.body.unitsSold === 1, 'vendor analytics summary is invalid');
+  assert(vendorAnalytics.response.status === 200 && vendorAnalytics.body?.scope === 'vendor' && vendorAnalytics.body.totalOrders >= 2 && vendorAnalytics.body.unitsSold >= 2, 'vendor analytics summary is invalid');
   const adminAnalytics = await request('/analytics/admin', { headers: adminHeaders });
   assert(adminAnalytics.response.status === 200 && adminAnalytics.body?.scope === 'platform' && adminAnalytics.body.totalOrders >= 1, 'admin analytics summary is invalid');
   const adminStats = await request('/admin/stats', { headers: adminHeaders });
@@ -446,7 +485,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, product media, cart mutations, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, delivery notifications, and review protection');
 }
 
 main()
