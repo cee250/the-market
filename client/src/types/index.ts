@@ -21,6 +21,7 @@ export interface ProductSpec {
 
 export interface Product {
   id: string;
+  slug?: string;
   name: string;
   categorySlug: string;
   categoryName: string;

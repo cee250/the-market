@@ -1,100 +1,10 @@
 import { CATEGORIES } from '../data/categories';
 import { PRODUCTS, productById } from '../data/products';
 import type { Category, Product } from '../types';
-
-/**
- * API layer — the ONLY place the UI talks to data.
- *
- * Today it is backed by local seed data with simulated network latency.
- * When the backend lands, re-implement these functions with `fetch`
- * (or an http client) pointing at VITE_API_URL — the rest of the app
- * does not change.
- */
+import { searchMarketplace } from './marketplace';
 
 export type SortKey = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'rating';
-
-export interface ProductQuery {
-  category?: string;
-  tag?: string;
-  q?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  minRating?: number;
-  inStockOnly?: boolean;
-  sort?: SortKey;
-}
-
-const LATENCY = 350;
-const delay = (ms: number = LATENCY) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function applySort(items: Product[], sort: SortKey | undefined): Product[] {
-  switch (sort) {
-    case 'price-asc':
-      return [...items].sort((a, b) => a.price - b.price);
-    case 'price-desc':
-      return [...items].sort((a, b) => b.price - a.price);
-    case 'rating':
-      return [...items].sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount);
-    case 'newest':
-      return [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    case 'featured':
-    default:
-      return items; // curated order from the data layer
-  }
-}
-
-export const api = {
-  async getCategories(): Promise<Category[]> {
-    await delay(120);
-    return CATEGORIES;
-  },
-
-  async getProducts(query: ProductQuery = {}): Promise<Product[]> {
-    await delay();
-    let items = [...PRODUCTS];
-
-    if (query.category) items = items.filter((p) => p.categorySlug === query.category);
-    if (query.tag) items = items.filter((p) => p.tags.includes(query.tag as Product['tags'][number]));
-    if (query.minPrice != null) items = items.filter((p) => p.price >= query.minPrice!);
-    if (query.maxPrice != null) items = items.filter((p) => p.price <= query.maxPrice!);
-    if (query.minRating != null) items = items.filter((p) => p.rating >= query.minRating!);
-    if (query.inStockOnly) items = items.filter((p) => p.stock > 0);
-
-    if (query.q) {
-      const q = query.q.trim().toLowerCase();
-      if (q) {
-        items = items.filter((p) =>
-          [p.name, p.categoryName, p.description]
-            .join(' ')
-            .toLowerCase()
-            .includes(q),
-        );
-      }
-    }
-
-    return applySort(items, query.sort);
-  },
-
-  async getProduct(id: string): Promise<Product | undefined> {
-    await delay(220);
-    return productById.get(id);
-  },
-
-  async getRelated(product: Product, count = 8): Promise<Product[]> {
-    await delay(180);
-    const sameCategory = PRODUCTS.filter(
-      (p) => p.id !== product.id && p.categorySlug === product.categorySlug,
-    );
-    const others = PRODUCTS.filter(
-      (p) => p.id !== product.id && p.categorySlug !== product.categorySlug,
-    );
-    return [...sameCategory, ...others].slice(0, count);
-  },
-
-  /** Live search suggestions for the header search box. */
-  suggest(q: string, limit = 6): Product[] {
-    const query = q.trim().toLowerCase();
-    if (!query) return [];
-    return PRODUCTS.filter((p) => p.name.toLowerCase().includes(query)).slice(0, limit);
-  },
-};
+export interface ProductQuery { category?: string; tag?: string; q?: string; minPrice?: number; maxPrice?: number; minRating?: number; inStockOnly?: boolean; sort?: SortKey; }
+interface MarketplaceProduct { id: string; name: string; slug?: string; description?: string; price: number; categoryName?: string; location?: string; availability?: string; images?: { url: string; isCover?: boolean }[]; variants?: { stock?: number; isActive?: boolean }[]; createdAt?: string; }
+const toProduct = (item: MarketplaceProduct): Product => { const image = item.images?.find((entry) => entry.isCover)?.url ?? item.images?.[0]?.url ?? 'https://placehold.co/800x800/e2e8f0/475569?text=Market'; const stock = (item.variants ?? []).filter((variant) => variant.isActive !== false).reduce((sum, variant) => sum + Number(variant.stock ?? 0), 0); return { id: item.id, slug: item.slug, name: item.name, categorySlug: (item.categoryName ?? 'products').toLowerCase().replace(/[^a-z0-9]+/g, '-'), categoryName: item.categoryName ?? 'Products', price: item.price, description: item.description ?? '', specs: item.location ? [{ label: 'Location', value: item.location }] : [], image, stock: stock || (item.availability === 'out_of_stock' ? 0 : 1), tags: [], rating: 0, reviewCount: 0, createdAt: item.createdAt ?? new Date().toISOString() }; };
+export const api = { async getCategories(): Promise<Category[]> { return CATEGORIES; }, async getProducts(query: ProductQuery = {}): Promise<Product[]> { const result = await searchMarketplace({ search: query.q, minPrice: query.minPrice, maxPrice: query.maxPrice, sort: query.sort === 'price-asc' ? 'price_asc' : query.sort === 'price-desc' ? 'price_desc' : query.sort === 'newest' ? 'newest' : undefined, limit: 50 }); let items = result.items.map((item) => toProduct(item as MarketplaceProduct)); const category = query.category; if (query.inStockOnly) items = items.filter((item) => item.stock > 0); if (category) items = items.filter((item) => item.categorySlug === category || item.categoryName.toLowerCase() === category.toLowerCase()); if (query.minRating) items = items.filter((item) => item.rating >= query.minRating!); return items; }, async getProduct(id: string): Promise<Product | undefined> { return productById.get(id); }, async getRelated(product: Product, count = 8): Promise<Product[]> { const items = await this.getProducts({ category: product.categorySlug }); return items.filter((item) => item.id !== product.id).slice(0, count); }, suggest(q: string, limit = 6): Product[] { const query = q.trim().toLowerCase(); return query ? PRODUCTS.filter((p) => p.name.toLowerCase().includes(query)).slice(0, limit) : []; } };
