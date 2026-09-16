@@ -145,9 +145,26 @@ async function main() {
   const authenticated = await request('/auth/me', { headers: { Cookie: setCookie.split(';')[0] } });
   assert(authenticated.response.status === 200 && authenticated.body?.user?.email === email, 'authenticated /auth/me response is invalid');
 
-  const sessionHeaders = { Cookie: setCookie.split(';')[0] };
+  const invalidLogin = await request('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: 'WrongPassword123!' }),
+  });
+  assert(invalidLogin.response.status === 401, 'invalid credentials were accepted');
+  let sessionHeaders = { Cookie: setCookie.split(';')[0] };
   const cart = await request('/cart', { headers: sessionHeaders });
   assert(cart.response.status === 200 && Array.isArray(cart.body?.items), 'authenticated cart response is invalid');
+  const logout = await request('/auth/logout', { method: 'POST', headers: sessionHeaders });
+  assert(logout.response.status === 204, 'customer logout did not return 204');
+  const loggedOutAccess = await request('/auth/me', { headers: sessionHeaders });
+  assert([401, 403].includes(loggedOutAccess.response.status), 'logged-out customer session remained valid');
+  const relogin = await request('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: 'E2ePassword123!' }),
+  });
+  assert(relogin.response.status === 200 && relogin.response.headers.get('set-cookie')?.startsWith('market_session='), 'customer could not log in again after logout');
+  sessionHeaders = { Cookie: relogin.response.headers.get('set-cookie').split(';')[0] };
   const invalidCheckout = await request('/checkout', {
     method: 'POST',
     headers: { ...sessionHeaders, 'Content-Type': 'application/json', 'Idempotency-Key': `e2e-invalid-${Date.now()}` },
@@ -367,6 +384,8 @@ async function main() {
   assert(publishedProduct.response.status === 201 && publishedProduct.body?.status === 'PUBLISHED', 'vendor product publishing failed');
   const publicProduct = await request(`/marketplace/products/${encodeURIComponent(publishedProduct.body.slug)}`);
   assert(publicProduct.response.status === 200 && publicProduct.body?.id === productCreation.body.id, 'published product was not publicly visible');
+  const filteredProducts = await request('/marketplace/products?search=E2E%20Updated%20Product&location=Kigali&condition=new&minPrice=12000&maxPrice=13000&sort=price_desc&limit=10');
+  assert(filteredProducts.response.status === 200 && filteredProducts.body?.items?.some((item) => item.id === productCreation.body.id) && filteredProducts.body?.items?.[0]?.price >= 12000, 'marketplace search and filters did not find the updated product');
 
   const addToCart = await request('/cart/items', {
     method: 'POST',
@@ -484,6 +503,9 @@ async function main() {
   assert(deliveredUpdate.response.status === 200 && deliveredUpdate.body?.status === 'DELIVERED', 'vendor could not mark the order delivered');
   const notifications = await request('/notifications', { headers: sessionHeaders });
   assert(notifications.response.status === 200 && Array.isArray(notifications.body?.items) && notifications.body.items.some((item) => item.type === 'ORDER_STATUS'), 'customer order notification was not created');
+  const statusNotification = notifications.body.items.find((item) => item.type === 'ORDER_STATUS');
+  const markedNotification = await request(`/notifications/${statusNotification.id}/read`, { method: 'PATCH', headers: sessionHeaders });
+  assert(markedNotification.response.status === 200 && markedNotification.body?.success === true, 'customer notification could not be marked read individually');
   const markedNotifications = await request('/notifications/read-all', { method: 'PATCH', headers: sessionHeaders });
   assert(markedNotifications.response.status === 200 && markedNotifications.body?.success === true, 'customer notifications could not be marked read');
   const review = await request(`/products/${productCreation.body.id}/reviews`, {
@@ -515,7 +537,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, product updates, variant maintenance, inventory maintenance, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog filters, authentication failures/logout, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, product updates, variant maintenance, inventory maintenance, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, notification read states, and review protection');
 }
 
 main()
