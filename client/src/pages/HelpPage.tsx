@@ -25,7 +25,7 @@ const FAQS = [
   },
   {
     q: 'Can I become a seller on Market?',
-    a: 'Seller onboarding is coming soon as part of the next phase. Subscribe to the newsletter at the bottom of the page and we will let you know first.',
+    a: 'Yes. Start the live seller registration flow at /register/vendor. You can create your vendor profile and continue through the required package and payment steps from there.',
   },
 ];
 
