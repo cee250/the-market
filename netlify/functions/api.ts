@@ -20,10 +20,11 @@ export const handler = async (
 ) => {
   try {
     const appHandler = await getHandler();
-    const requestEvent = { ...event } as typeof event & { path?: string; rawPath?: string };
+    const requestEvent = { ...event } as typeof event & { path?: string; rawPath?: string; requestPath?: string };
     const stripFunctionPrefix = (path?: string) => path?.replace(/^\/\.netlify\/functions\/api/, '').replace(/^\/api(?=\/|$)/, '') || path;
     requestEvent.path = stripFunctionPrefix(requestEvent.path);
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
+    requestEvent.requestPath = stripFunctionPrefix(requestEvent.requestPath);
     return appHandler(requestEvent, context);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown API startup error';
