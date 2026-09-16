@@ -3,6 +3,9 @@
   publish = "client/dist"
   functions = "netlify/functions"
 
+[functions]
+  external_node_modules = ["@nestjs/microservices", "@nestjs/websockets", "mysql2", "sqlite3", "better-sqlite3", "oracledb", "tedious", "pg-native"]
+
 [build.environment]
   NODE_VERSION = "20"
 
