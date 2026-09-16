@@ -339,6 +339,26 @@ async function main() {
     body: JSON.stringify({ imageId: imageIds[1] }),
   });
   assert(coveredImage.response.status === 201 && coveredImage.body?.images?.find((image) => image.id === imageIds[1])?.isCover === true, 'vendor cover image selection failed');
+  const customerProductUpdate = await request(`/products/${productCreation.body.id}`, {
+    method: 'PATCH',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ price: 999 }),
+  });
+  assert(customerProductUpdate.response.status === 403, 'customer was allowed to update vendor product');
+  const updatedProduct = await request(`/products/${productCreation.body.id}`, {
+    method: 'PATCH',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Updated Product', price: 12750, availability: 'in_stock' }),
+  });
+  assert(updatedProduct.response.status === 200 && updatedProduct.body?.name === 'E2E Updated Product' && updatedProduct.body?.price === 12750, 'vendor product update failed');
+  const updatedVariant = await request(`/products/${productCreation.body.id}/variants/${variantCreation.body.id}`, {
+    method: 'PATCH',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ color: 'Red', stock: 8 }),
+  });
+  assert(updatedVariant.response.status === 200 && updatedVariant.body?.color === 'Red' && updatedVariant.body?.stock === 8, 'vendor variant update failed');
+  const deletedVariant = await request(`/products/${productCreation.body.id}/variants/${variantCreation.body.id}`, { method: 'DELETE', headers: vendorHeaders });
+  assert(deletedVariant.response.status === 200 && deletedVariant.body?.deleted === true, 'vendor variant deletion failed');
   const publishedProduct = await request(`/products/${productCreation.body.id}/publish`, {
     method: 'POST',
     headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
@@ -431,6 +451,16 @@ async function main() {
   assert(duplicateVerification.response.status === 400, 'resolved payment could be verified twice');
   const failedCustomerOrder = await request(`/orders/${failedOrderId}`, { headers: sessionHeaders });
   assert(failedCustomerOrder.response.status === 200 && failedCustomerOrder.body?.status === 'CANCELLED', 'failed payment did not cancel the order');
+  const updatedInventory = await request(`/inventory/${inventoryId}`, {
+    method: 'PATCH',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Updated Stock', lowStockThreshold: 3, notes: 'Updated in Phase 43' }),
+  });
+  assert(updatedInventory.response.status === 200 && updatedInventory.body?.name === 'E2E Updated Stock' && updatedInventory.body?.lowStockThreshold === 3, 'vendor inventory update failed');
+  const archivedInventory = await request(`/inventory/${inventoryId}`, { method: 'DELETE', headers: vendorHeaders });
+  assert(archivedInventory.response.status === 200 && archivedInventory.body?.archived === true, 'vendor inventory archive failed');
+  const activeInventory = await request('/inventory', { headers: vendorHeaders });
+  assert(activeInventory.response.status === 200 && !activeInventory.body.some((item) => item.id === inventoryId), 'archived inventory remained active');
   const customerOrders = await request('/orders', { headers: sessionHeaders });
   assert(customerOrders.response.status === 200 && customerOrders.body.length >= 2, 'customer order list omitted the failed order');
   const adminOrders = await request('/admin/orders', { headers: adminHeaders });
@@ -485,7 +515,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, product updates, variant maintenance, inventory maintenance, product media, cart mutations, payment success/failure, order views, analytics, admin stats, audit logs, delivery notifications, and review protection');
 }
 
 main()
