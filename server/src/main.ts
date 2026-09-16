@@ -23,6 +23,7 @@ async function bootstrap(): Promise<void> {
   });
   httpAdapter.use((request: Request, response: Response, next: NextFunction) => {
     response.setHeader('X-Request-Id', randomUUID());
+    if (request.path.startsWith('/api/')) response.setHeader('Cache-Control', 'no-store');
     next();
   });
 
@@ -42,6 +43,11 @@ async function bootstrap(): Promise<void> {
     const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + rateLimitWindowMs };
     bucket.count += 1;
     attempts.set(key, bucket);
+    if (attempts.size > 10_000) {
+      for (const [entryKey, entry] of attempts) {
+        if (entry.resetAt <= now) attempts.delete(entryKey);
+      }
+    }
     response.setHeader('X-RateLimit-Limit', String(rateLimitMax));
     response.setHeader('X-RateLimit-Remaining', String(Math.max(0, rateLimitMax - bucket.count)));
     if (bucket.count > rateLimitMax) {
