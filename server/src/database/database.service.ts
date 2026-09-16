@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import knex, { Knex } from 'knex';
 
@@ -13,7 +13,7 @@ import knex, { Knex } from 'knex';
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private readonly knexInstance: Knex;
 
-  constructor(config: ConfigService) {
+  constructor(@Inject(ConfigService) config: ConfigService) {
     const url = config.get<string>('DATABASE_URL');
     if (!url) {
       throw new Error('DATABASE_URL is not set — copy server/.env.example to server/.env.');
