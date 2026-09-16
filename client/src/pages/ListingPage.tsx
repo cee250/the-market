@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Check, SearchX, SlidersHorizontal } from 'lucide-react';
+import { Check, Search, SearchX, SlidersHorizontal } from 'lucide-react';
 import { ProductCard } from '../components/product/ProductCard';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { Drawer } from '../components/ui/Drawer';
@@ -172,6 +172,8 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
   const q = mode === 'search' ? (searchParams.get('q') ?? '').trim() : undefined;
   const urlTag = searchParams.get('tag') ?? undefined;
   const urlSort = searchParams.get('sort') as SortKey | null;
+  const navigate = useNavigate();
+  const [searchText, setSearchText] = useState(q ?? '');
 
   const [filters, setFilters] = useState<LocalFilters>(EMPTY_FILTERS);
   const [sort, setSort] = useState<SortKey | ''>(urlSort ?? '');
@@ -179,6 +181,8 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
   const [mobileFilters, setMobileFilters] = useState(false);
   const categories = useAsync(() => api.getCategories(), []);
   const categoryItems = categories.data ?? [];
+
+  useEffect(() => { setSearchText(q ?? ''); }, [q]);
 
   const category = mode === 'category' ? categoryItems.find((item) => item.slug === slug) : undefined;
   const unknownCategory = mode === 'category' && !category;
@@ -264,6 +268,20 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
       )}
 
       <Breadcrumbs items={crumbs} />
+      <form onSubmit={(event) => { event.preventDefault(); const value = searchText.trim(); navigate(value ? `/search?q=${encodeURIComponent(value)}` : '/shop'); }} className="mt-5 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+        <div className="flex flex-col gap-3 md:flex-row">
+          <label className="relative flex-1">
+            <span className="sr-only">Search the catalog</span>
+            <Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search products, brands and categories…" className="w-full rounded-xl bg-slate-50 py-3 pl-11 pr-4 text-sm text-slate-800 outline-none ring-1 ring-transparent transition focus:bg-white focus:ring-emerald-500" />
+          </label>
+          <select value={category?.slug ?? (mode === 'shop' ? '' : slug ?? '')} onChange={(event) => navigate(event.target.value ? `/category/${event.target.value}` : '/shop')} className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 focus:border-emerald-500 focus:outline-none">
+            <option value="">All categories</option>
+            {categoryItems.map((item) => <option key={item.slug} value={item.slug}>{item.name}</option>)}
+          </select>
+          <button type="submit" className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700">Search</button>
+        </div>
+      </form>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
