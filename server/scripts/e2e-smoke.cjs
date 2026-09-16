@@ -230,6 +230,45 @@ async function main() {
     body: JSON.stringify({ name: 'E2E Test Product', sku: `E2E-${Date.now()}`, description: 'Product created by the Phase 35 smoke test', price: 12500, location: 'Kigali', condition: 'new', availability: 'in_stock' }),
   });
   assert(productCreation.response.status === 201 && productCreation.body?.id, 'vendor product creation failed');
+  const variantCreation = await request(`/products/${productCreation.body.id}/variants`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sku: `E2E-VARIANT-${Date.now()}`, color: 'Blue', size: 'Standard', stock: 10, price: 13000 }),
+  });
+  assert(variantCreation.response.status === 201 && variantCreation.body?.id && variantCreation.body?.stock === 10, 'vendor variant creation failed');
+  const inventoryCreation = await request('/inventory', {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Test Product stock', sku: `E2E-STOCK-${Date.now()}`, productId: productCreation.body.id, openingQuantity: 5, lowStockThreshold: 2 }),
+  });
+  assert(inventoryCreation.response.status === 201 && inventoryCreation.body?.remainingQuantity === 5, 'inventory item creation failed');
+  const inventoryId = inventoryCreation.body.id;
+  const addedStock = await request(`/inventory/${inventoryId}/add-stock`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: 3, note: 'E2E restock' }),
+  });
+  assert(addedStock.response.status === 201 && addedStock.body?.remainingQuantity === 8, 'inventory addition failed');
+  const recordedSale = await request(`/inventory/${inventoryId}/record-sale`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: 2, note: 'E2E offline sale' }),
+  });
+  assert(recordedSale.response.status === 201 && recordedSale.body?.remainingQuantity === 6 && recordedSale.body?.soldQuantity === 2, 'inventory sale failed');
+  const adjustedStock = await request(`/inventory/${inventoryId}/adjust`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantityDelta: -1, note: 'E2E count adjustment' }),
+  });
+  assert(adjustedStock.response.status === 201 && adjustedStock.body?.remainingQuantity === 5, 'inventory adjustment failed');
+  const oversale = await request(`/inventory/${inventoryId}/record-sale`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: 6 }),
+  });
+  assert(oversale.response.status === 400, 'inventory allowed stock to become negative');
+  const inventoryMovements = await request(`/inventory/${inventoryId}/movements`, { headers: vendorHeaders });
+  assert(inventoryMovements.response.status === 200 && inventoryMovements.body.length === 4, 'inventory movement history is incomplete');
   const publishedProduct = await request(`/products/${productCreation.body.id}/publish`, {
     method: 'POST',
     headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
@@ -314,7 +353,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, payment review, activation, product publishing, idempotent checkout, order payment, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, variants, inventory integrity, payment review, activation, product publishing, idempotent checkout, order payment, delivery notifications, and review protection');
 }
 
 main()
