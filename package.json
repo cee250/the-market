@@ -15,7 +15,8 @@
     "typecheck": "npm run typecheck -w client && npm run typecheck -w server",
     "test": "npm test -w server",
     "test:e2e:smoke": "npm run test:e2e:smoke -w server",
-    "check:production-config": "npm run check:production-config -w server"
+    "check:production-config": "npm run check:production-config -w server",
+    "audit:high": "npm audit --audit-level=high"
   },
   "engines": {
     "node": ">=20.19"

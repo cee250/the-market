@@ -36,6 +36,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 18** | **Security hardening, performance, testing, deployment, monitoring** | ✅ **Complete** |
 | **Phase 46** | **Readiness dependency diagnostics and production health observability** | ✅ **Complete** |
 | **Phase 47** | **Readiness contract regression coverage and release-status synchronization** | ✅ **Complete** |
+| **Phase 48** | **Dependency vulnerability remediation and CI audit enforcement** | ✅ **Complete** |
 
 ## Architecture
 
@@ -47,7 +48,7 @@ the-market/                     npm workspaces monorepo
 │       ├── components/         layout / product / ui
 │       ├── context/            cart, wishlist, compare, auth (mock), toasts
 │       └── services/api.ts     ⭐ data layer — mock today, real API from Phase 11
-├── server/                     API (NestJS 11 + Knex + PostgreSQL 18)
+├── server/                     API (NestJS 12 + Knex + PostgreSQL 18)
 │   ├── src/
 │   │   ├── main.ts             bootstrap: /api prefix, CORS, validation pipe, shutdown hooks
 │   │   ├── app.module.ts       Config (validated env) + Database (global) + feature modules
@@ -103,6 +104,12 @@ Phase 47 adds focused regression coverage for the liveness and readiness contrac
 including database latency diagnostics and the expected HTTP 503 payload when the
 database dependency is unavailable. The tests are included in the server test suite
 and run after TypeScript compilation.
+
+Phase 48 upgrades the API runtime and CLI to NestJS 12, which resolves the vulnerable
+`multer` dependency through the patched `2.4.0` release, and adds `npm run audit:high`
+to CI so high-severity dependency vulnerabilities fail before release. The repository
+currently has no file-upload interceptors, and the compatibility suite passes after
+the framework upgrade.
 
 Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 The API exposes `/api/health/live` for process liveness and `/api/health/ready` for
