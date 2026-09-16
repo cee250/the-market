@@ -21,7 +21,7 @@ export const handler = async (
   try {
     const appHandler = await getHandler();
     const requestEvent = { ...event } as typeof event & { path?: string; rawPath?: string };
-    const stripFunctionPrefix = (path?: string) => path?.replace(/^\/\.netlify\/functions\/api/, '') || path;
+    const stripFunctionPrefix = (path?: string) => path?.replace(/^\/\.netlify\/functions\/api/, '').replace(/^\/api(?=\/|$)/, '') || path;
     requestEvent.path = stripFunctionPrefix(requestEvent.path);
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
     return appHandler(requestEvent, context);
