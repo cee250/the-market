@@ -9,7 +9,10 @@ let handlerPromise: Promise<ReturnType<typeof serverless>> | undefined;
 async function getHandler(): Promise<ReturnType<typeof serverless>> {
   if (!handlerPromise) {
     const { createApp } = await import('../../server/src/main');
-    handlerPromise = createApp().then((app) => serverless(app.getHttpAdapter().getInstance()));
+    handlerPromise = createApp().then(async (app) => {
+      await app.init();
+      return serverless(app.getHttpAdapter().getInstance());
+    });
   }
   return handlerPromise;
 }
