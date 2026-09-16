@@ -1,8 +1,22 @@
-const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+import { demoProducts, findDemoProduct } from './demoData';
+
 export interface MarketplaceQuery { search?: string; categoryId?: string; vendorId?: string; location?: string; condition?: string; minPrice?: number; maxPrice?: number; sort?: 'price_asc' | 'price_desc' | 'newest'; page?: number; limit?: number }
-export async function searchMarketplace(query: MarketplaceQuery = {}) { const params = new URLSearchParams(); for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== '') params.set(key, String(value)); const response = await fetch(`${API_URL}/api/marketplace/products?${params}`, { credentials: 'include' }); if (!response.ok) throw new Error('Unable to load marketplace products'); return response.json() as Promise<{ items: unknown[]; page: number; limit: number; total: number }>; }
-export async function getMarketplaceProduct(slug: string) { const response = await fetch(`${API_URL}/api/marketplace/products/${encodeURIComponent(slug)}`, { credentials: 'include' }); if (!response.ok) throw new Error('Product not found'); return response.json(); }
 export interface MarketplaceReview { id: string; reviewer_name: string; rating: number; comment: string; created_at: string; }
-export async function getMarketplaceReviews(slug: string) { const response = await fetch(`${API_URL}/api/marketplace/products/${encodeURIComponent(slug)}/reviews`, { credentials: 'include' }); if (!response.ok) throw new Error('Unable to load reviews'); return response.json() as Promise<MarketplaceReview[]>; }
-export async function createProductReview(productId: string, input: { rating: number; comment: string }) { const response = await fetch(`${API_URL}/api/products/${encodeURIComponent(productId)}/reviews`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input) }); if (!response.ok) { const body = await response.json().catch(() => null) as { message?: string } | null; throw new Error(body?.message ?? 'Unable to submit review'); } return response.json() as Promise<MarketplaceReview>; }
-export async function suggestMarketplace(query: string, limit = 6) { const result = await searchMarketplace({ search: query, limit }); return result.items.map((item) => { const product = item as { id: string; name: string; price: number; categoryName?: string; slug?: string; images?: { url: string; isCover?: boolean }[] }; return { id: product.id, slug: product.slug, name: product.name, price: product.price, categoryName: product.categoryName ?? 'Products', image: product.images?.find((image) => image.isCover)?.url ?? product.images?.[0]?.url ?? 'https://placehold.co/80x80?text=Market' }; }); }
+const REVIEWS_KEY = 'market.demo.reviews.v1';
+function storedReviews(): Record<string, MarketplaceReview[]> { try { return JSON.parse(window.localStorage.getItem(REVIEWS_KEY) ?? '{}') as Record<string, MarketplaceReview[]>; } catch { return {}; } }
+
+export async function searchMarketplace(query: MarketplaceQuery = {}) {
+  const needle = query.search?.trim().toLowerCase();
+  let items = demoProducts.filter((product) => !needle || `${product.name} ${product.categoryName} ${product.description}`.toLowerCase().includes(needle));
+  if (query.minPrice !== undefined) items = items.filter((product) => product.price >= query.minPrice!);
+  if (query.maxPrice !== undefined) items = items.filter((product) => product.price <= query.maxPrice!);
+  if (query.sort === 'price_asc') items = [...items].sort((a, b) => a.price - b.price);
+  if (query.sort === 'price_desc') items = [...items].sort((a, b) => b.price - a.price);
+  if (query.sort === 'newest') items = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const limit = query.limit ?? 50;
+  return { items: items.slice(0, limit), page: 1, limit, total: items.length };
+}
+export async function getMarketplaceProduct(slug: string) { const product = findDemoProduct(slug); if (!product) throw new Error('Product not found'); return product; }
+export async function getMarketplaceReviews(slug: string): Promise<MarketplaceReview[]> { const product = findDemoProduct(slug); const saved = storedReviews()[product?.id ?? slug] ?? []; return [...saved, { id: 'demo-review-1', reviewer_name: 'Aline M.', rating: product?.rating ?? 5, comment: 'Lovely quality and exactly as described. Delivery was smooth too.', created_at: new Date(Date.now() - 86400000 * 4).toISOString() }]; }
+export async function createProductReview(productId: string, input: { rating: number; comment: string }) { const all = storedReviews(); const reviews = all[productId] ?? []; const review = { id: `review-${Date.now()}`, reviewer_name: 'You', rating: input.rating, comment: input.comment, created_at: new Date().toISOString() }; all[productId] = [review, ...reviews]; try { window.localStorage.setItem(REVIEWS_KEY, JSON.stringify(all)); } catch { /* unavailable */ } return review; }
+export async function suggestMarketplace(query: string, limit = 6) { const result = await searchMarketplace({ search: query, limit }); return result.items.map((product) => ({ id: product.id, slug: product.slug, name: product.name, price: product.price, categoryName: product.categoryName, image: product.image })); }
