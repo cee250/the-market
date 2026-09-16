@@ -19,8 +19,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     }
     this.knexInstance = knex({
       client: 'pg',
-      connection: url,
-      pool: { min: 1, max: 10 },
+      connection: {
+        connectionString: url,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 10_000,
+        statement_timeout: 10_000,
+      },
+      pool: { min: 0, max: 4, idleTimeoutMillis: 10_000 },
       useNullAsDefault: true,
     });
   }
