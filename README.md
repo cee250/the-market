@@ -9,6 +9,10 @@ marketplace with multi-vendor cart, checkout and order tracking.
 
 ## Current status
 
+> **Implementation status:** The original architecture roadmap is complete through
+> Phase 18. The project is now tracked in numbered hardening and production-readiness
+> increments. **Phase 47 is complete**; the repository is ready for the next increment.
+
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
 | Frontend (pre-spec) | Full storefront SPA | ✅ Done |
@@ -29,7 +33,9 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 15** | **Marketplace browsing, search, filters, sorting, product details** | ✅ **Done** |
 | **Phase 16** | **Platform operations, audit visibility, strict validation hardening** | ✅ **Done** |
 | **Phase 17** | **Analytics, notifications, SEO** | ✅ **Done** |
-| Phase 18 | Security hardening, performance, testing, deployment, monitoring | ⏳ Planned |
+| **Phase 18** | **Security hardening, performance, testing, deployment, monitoring** | ✅ **Complete** |
+| **Phase 46** | **Readiness dependency diagnostics and production health observability** | ✅ **Complete** |
+| **Phase 47** | **Readiness contract regression coverage and release-status synchronization** | ✅ **Complete** |
 
 ## Architecture
 
@@ -92,6 +98,11 @@ npm run dev:client
 
 Useful: `npm run build` (both), `npm run typecheck` (both), `npm test`,
 `npm run check:production-config -w server`, and `npm run db:rollback -w server`.
+
+Phase 47 adds focused regression coverage for the liveness and readiness contract,
+including database latency diagnostics and the expected HTTP 503 payload when the
+database dependency is unavailable. The tests are included in the server test suite
+and run after TypeScript compilation.
 
 Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 The API exposes `/api/health/live` for process liveness and `/api/health/ready` for
