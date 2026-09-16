@@ -157,7 +157,72 @@ async function main() {
   const orders = await request('/orders', { headers: sessionHeaders });
   assert(orders.response.status === 200 && Array.isArray(orders.body), 'authenticated orders response is invalid');
 
-  console.log('[e2e] PASS health probes, catalog, categories, auth/session, cart, checkout validation, and orders');
+  const vendorEmail = `e2e-vendor-${Date.now()}@market.test`;
+  const vendorRegistration = await request('/auth/register/vendor', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: 'E2E Vendor',
+      businessName: 'E2E Market Shop',
+      email: vendorEmail,
+      phone: '0780000000',
+      location: 'Kigali',
+      password: 'E2eVendor123!',
+      confirmPassword: 'E2eVendor123!',
+      termsVersion: '2026-01',
+    }),
+  });
+  assert(vendorRegistration.response.status === 201, `vendor registration returned ${vendorRegistration.response.status}`);
+  const vendorCookie = vendorRegistration.response.headers.get('set-cookie');
+  assert(vendorCookie?.startsWith('market_session='), 'vendor registration did not issue a session cookie');
+  const vendorHeaders = { Cookie: vendorCookie.split(';')[0] };
+  assert(vendorRegistration.body?.user?.vendorStatus === 'PENDING_PAYMENT', 'new vendor did not start in PENDING_PAYMENT');
+
+  const vendorPackages = await request('/payments/packages', { headers: vendorHeaders });
+  assert(vendorPackages.response.status === 200 && vendorPackages.body?.[0]?.id, 'vendor package list is invalid');
+  const vendorPayment = await request('/payments/vendor', {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ packageId: vendorPackages.body[0].id, paymentMethod: 'mobile-money', reference: 'E2E-REFERENCE' }),
+  });
+  assert(vendorPayment.response.status === 201 && vendorPayment.body?.status === 'PENDING_REVIEW', 'vendor payment was not recorded for review');
+
+  const adminLogin = await request('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: process.env.ADMIN_EMAIL || 'admin@market.rw', password: process.env.ADMIN_PASSWORD || 'ChangeMe123!' }),
+  });
+  assert(adminLogin.response.status === 200, `admin login returned ${adminLogin.response.status}`);
+  const adminCookie = adminLogin.response.headers.get('set-cookie');
+  assert(adminCookie?.startsWith('market_session='), 'admin login did not issue a session cookie');
+  const adminHeaders = { Cookie: adminCookie.split(';')[0] };
+  const adminPayments = await request('/payments/admin', { headers: adminHeaders });
+  assert(adminPayments.response.status === 200 && Array.isArray(adminPayments.body), 'admin payment queue is invalid');
+  const pendingPayment = adminPayments.body.find((payment) => payment.id === vendorPayment.body.id);
+  assert(pendingPayment?.status === 'PENDING_REVIEW', 'submitted vendor payment was not visible in admin queue');
+  const reviewedPayment = await request(`/payments/admin/${pendingPayment.id}/review`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decision: 'VERIFIED', reviewNote: 'E2E verification' }),
+  });
+  assert(reviewedPayment.response.status === 200 && reviewedPayment.body?.status === 'VERIFIED' && reviewedPayment.body?.vendorStatus === 'PENDING_APPROVAL', 'payment review did not move vendor to PENDING_APPROVAL');
+
+  const managedVendors = await request('/vendors/admin', { headers: adminHeaders });
+  assert(managedVendors.response.status === 200 && Array.isArray(managedVendors.body), 'admin vendor list is invalid');
+  const managedVendor = managedVendors.body.find((vendor) => vendor.email === vendorEmail);
+  assert(managedVendor?.status === 'PENDING_APPROVAL', 'verified vendor was not visible as PENDING_APPROVAL');
+  const activatedVendor = await request(`/vendors/admin/${managedVendor.id}/action`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'ACTIVATE', note: 'E2E activation' }),
+  });
+  assert(activatedVendor.response.status === 201 && activatedVendor.body?.status === 'ACTIVE', `admin activation did not activate vendor: HTTP ${activatedVendor.response.status} ${JSON.stringify(activatedVendor.body)}`);
+
+  const vendorDashboard = await request('/shops/dashboard', { headers: vendorHeaders });
+  assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
+  const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
+  assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
+  console.log('[e2e] PASS health, catalog, categories, auth/session, cart, checkout, orders, vendor onboarding, payment review, activation, and fulfillment boundaries');
 }
 
 main()
