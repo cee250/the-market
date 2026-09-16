@@ -42,3 +42,45 @@ jobs:
           ADMIN_EMAIL: admin@market.rw
           ADMIN_PASSWORD: ChangeMe123!
       - run: docker build --file server/Dockerfile --tag market-api:ci .
+      - name: Smoke test production container
+        shell: bash
+        env:
+          DATABASE_URL: postgresql://market:market@127.0.0.1:5433/market
+          JWT_SECRET: ci-only-secret-that-is-long-enough-for-container
+          CORS_ORIGIN: http://localhost:4000
+          ADMIN_EMAIL: admin@market.rw
+          ADMIN_PASSWORD: ChangeMe123!
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e NODE_ENV=production \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e CORS_ORIGIN="$CORS_ORIGIN" \
+            -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+            -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            market-api:ci npm run db:migrate -w server
+          docker run --rm --network host \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e NODE_ENV=production \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e CORS_ORIGIN="$CORS_ORIGIN" \
+            -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+            -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            market-api:ci npm run db:seed -w server
+          docker run -d --name market-api-ci --network host \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e NODE_ENV=production \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e CORS_ORIGIN="$CORS_ORIGIN" \
+            market-api:ci
+          trap 'docker rm -f market-api-ci >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4000/api/health/live >/dev/null; then
+              curl --fail --silent http://127.0.0.1:4000/api/health/ready >/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs market-api-ci
+          exit 1

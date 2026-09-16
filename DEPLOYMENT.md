@@ -12,7 +12,7 @@ Set `NODE_ENV=production`, `DATABASE_URL`, `JWT_SECRET`, and `CORS_ORIGIN` befor
 4. Start the API with `npm run start -w server` and serve the client `client/dist` through the selected static host or CDN.
 
 Never run destructive rollback commands automatically during deployment. Take a database backup before migrations and use `npm run db:rollback -w server` only as an explicitly reviewed recovery operation.
-The CI workflow provisions PostgreSQL 18, applies migrations and reference seeds through the smoke harness, and blocks the release when the running API does not satisfy its end-to-end contract.
+The CI workflow provisions PostgreSQL 18, applies migrations and reference seeds through both the smoke harness and the production image, starts the built container, and blocks the release unless its liveness and database readiness endpoints respond successfully.
 
 ## Health checks
 
