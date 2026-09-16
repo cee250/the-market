@@ -119,7 +119,8 @@ export class AuthController {
   @HttpCode(204)
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await this.auth.logout(request.headers.cookie);
-    response.setHeader('Set-Cookie', `${AuthService.sessionCookieName()}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax`);
+    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    response.setHeader('Set-Cookie', `${AuthService.sessionCookieName()}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`);
   }
 
   @Get('me')

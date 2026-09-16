@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { randomUUID } from 'node:crypto';
+import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
@@ -19,11 +21,34 @@ async function bootstrap(): Promise<void> {
     response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     next();
   });
+  httpAdapter.use((request: Request, response: Response, next: NextFunction) => {
+    response.setHeader('X-Request-Id', randomUUID());
+    next();
+  });
 
   const corsOrigin = config.get<string>('CORS_ORIGIN');
   app.enableCors({
     origin: corsOrigin ? corsOrigin.split(',').map((o) => o.trim()) : true,
     credentials: true,
+  });
+  const rateLimitWindowMs = config.get<number>('RATE_LIMIT_WINDOW_MS') ?? 60_000;
+  const rateLimitMax = config.get<number>('RATE_LIMIT_MAX') ?? 10;
+  const attempts = new Map<string, { count: number; resetAt: number }>();
+  httpAdapter.use('/api/auth', (request: Request, response: Response, next: NextFunction) => {
+    if (request.method === 'GET') return next();
+    const key = `${request.ip ?? 'unknown'}:${request.path}`;
+    const now = Date.now();
+    const current = attempts.get(key);
+    const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + rateLimitWindowMs };
+    bucket.count += 1;
+    attempts.set(key, bucket);
+    response.setHeader('X-RateLimit-Limit', String(rateLimitMax));
+    response.setHeader('X-RateLimit-Remaining', String(Math.max(0, rateLimitMax - bucket.count)));
+    if (bucket.count > rateLimitMax) {
+      response.setHeader('Retry-After', String(Math.ceil((bucket.resetAt - now) / 1000)));
+      return response.status(429).json({ statusCode: 429, message: 'Too many authentication attempts. Try again later.' });
+    }
+    return next();
   });
 
   // Whitelist + transform on all incoming DTOs (spec §44: server-side validation)

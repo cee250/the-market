@@ -13,6 +13,14 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error(`PORT must be a valid port number, got: ${String(config.PORT)}`);
   }
+  const rateLimitWindowMs = Number(config.RATE_LIMIT_WINDOW_MS ?? 60_000);
+  const rateLimitMax = Number(config.RATE_LIMIT_MAX ?? 10);
+  if (!Number.isInteger(rateLimitWindowMs) || rateLimitWindowMs < 1_000) {
+    throw new Error(`RATE_LIMIT_WINDOW_MS must be an integer of at least 1000ms, got: ${String(config.RATE_LIMIT_WINDOW_MS)}`);
+  }
+  if (!Number.isInteger(rateLimitMax) || rateLimitMax < 1) {
+    throw new Error(`RATE_LIMIT_MAX must be a positive integer, got: ${String(config.RATE_LIMIT_MAX)}`);
+  }
 
   const jwtSecret = String(config.JWT_SECRET ?? '');
   const nodeEnv = String(config.NODE_ENV ?? 'development');
@@ -30,6 +38,8 @@ export function validateEnv(config: Record<string, unknown>): Record<string, unk
   return {
     ...config,
     PORT: port,
+    RATE_LIMIT_WINDOW_MS: rateLimitWindowMs,
+    RATE_LIMIT_MAX: rateLimitMax,
     JWT_SECRET: jwtSecret || 'dev-only-secret-change-me-in-production',
     JWT_EXPIRES_IN: config.JWT_EXPIRES_IN ?? '15m',
     NODE_ENV: nodeEnv,

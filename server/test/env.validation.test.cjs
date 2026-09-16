@@ -27,3 +27,20 @@ test('production accepts strong credentials and explicit CORS', () => {
   const config = validateEnv({ DATABASE_URL: 'postgres://db/market', NODE_ENV: 'production', JWT_SECRET: 'a'.repeat(32), CORS_ORIGIN: 'https://market.rw' });
   assert.equal(config.CORS_ORIGIN, 'https://market.rw');
 });
+
+test('rate-limit settings reject unsafe values', () => {
+  assert.throws(
+    () => validateEnv({ DATABASE_URL: 'postgres://db/market', RATE_LIMIT_WINDOW_MS: 500 }),
+    /RATE_LIMIT_WINDOW_MS/,
+  );
+  assert.throws(
+    () => validateEnv({ DATABASE_URL: 'postgres://db/market', RATE_LIMIT_MAX: 0 }),
+    /RATE_LIMIT_MAX/,
+  );
+});
+
+test('rate-limit settings receive safe defaults', () => {
+  const config = validateEnv({ DATABASE_URL: 'postgres://db/market' });
+  assert.equal(config.RATE_LIMIT_WINDOW_MS, 60000);
+  assert.equal(config.RATE_LIMIT_MAX, 10);
+});

@@ -19,7 +19,7 @@ Use `GET /api/health/live` for a process-level liveness probe. Use `GET /api/hea
 
 ## Security and performance hardening
 
-The API disables the Express `X-Powered-By` fingerprint and sends baseline browser protection headers including `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a restrictive `Permissions-Policy`. Keep these headers intact at the reverse proxy layer. The client uses route-level code splitting so the initial storefront download is smaller; configure the static host to serve generated asset files and fall back to `index.html` only for application routes.
+The API disables the Express `X-Powered-By` fingerprint and sends baseline browser protection headers including `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and a restrictive `Permissions-Policy`. Every response includes an `X-Request-Id` value for correlating proxy and API logs. Authentication mutations are throttled per client IP and route using `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX`; use a shared edge limiter as well when running multiple API instances. Keep these headers intact at the reverse proxy layer. The client uses route-level code splitting so the initial storefront download is smaller; configure the static host to serve generated asset files and fall back to `index.html` only for application routes.
 
 ## Container builds
 
