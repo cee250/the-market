@@ -6,7 +6,6 @@ import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { Drawer } from '../components/ui/Drawer';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ProductGridSkeleton } from '../components/ui/Skeletons';
-import { CATEGORIES, categoryBySlug } from '../data/categories';
 import { useAsync } from '../hooks/useAsync';
 import { api, type SortKey } from '../services/api';
 import { cx } from '../lib/utils';
@@ -38,10 +37,12 @@ function FiltersPanel({
   filters,
   setFilters,
   activeCategory,
+  categories,
 }: {
   filters: LocalFilters;
   setFilters: (f: LocalFilters) => void;
   activeCategory?: string;
+  categories: { slug: string; shortName: string }[];
 }) {
   const navigate = useNavigate();
 
@@ -70,7 +71,7 @@ function FiltersPanel({
               All Products
             </button>
           </li>
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <li key={c.slug}>
               <button
                 type="button"
@@ -176,8 +177,10 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
   const [sort, setSort] = useState<SortKey | ''>(urlSort ?? '');
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [mobileFilters, setMobileFilters] = useState(false);
+  const categories = useAsync(() => api.getCategories(), []);
+  const categoryItems = categories.data ?? [];
 
-  const category = mode === 'category' ? categoryBySlug.get(slug ?? '') : undefined;
+  const category = mode === 'category' ? categoryItems.find((item) => item.slug === slug) : undefined;
   const unknownCategory = mode === 'category' && !category;
 
   const products = useAsync(
@@ -309,6 +312,7 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
               filters={filters}
               setFilters={setFilters}
               activeCategory={category?.slug}
+              categories={categoryItems}
             />
           </div>
         </aside>
@@ -358,6 +362,7 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
           filters={filters}
           setFilters={setFilters}
           activeCategory={category?.slug}
+          categories={categoryItems}
         />
         <button
           type="button"
