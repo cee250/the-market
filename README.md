@@ -40,6 +40,7 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 49** | **CI-backed PostgreSQL end-to-end smoke verification and release-gate synchronization** | 🚧 **In progress** |
 | **Phase 50** | **Production container completeness, healthcheck, and image-build verification** | 🚧 **In progress** |
 | **Phase 51** | **Production container migration, startup, and liveness/readiness smoke verification** | 🚧 **In progress** |
+| **Phase 52** | **Non-root production container hardening and runtime identity verification** | 🚧 **In progress** |
 
 ## Architecture
 
@@ -127,6 +128,9 @@ container liveness healthcheck and a CI image-build gate.
 Phase 51 starts the built production image against the CI PostgreSQL service, applies
 migrations and reference seeds through the image itself, and verifies liveness and
 readiness over HTTP before the workflow can pass.
+
+Phase 52 runs the production API image as the built-in unprivileged `node` user and
+asserts the runtime identity in CI before checking liveness and readiness.
 
 Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 The API exposes `/api/health/live` for process liveness and `/api/health/ready` for

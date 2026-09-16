@@ -75,6 +75,7 @@ jobs:
             -e CORS_ORIGIN="$CORS_ORIGIN" \
             market-api:ci
           trap 'docker rm -f market-api-ci >/dev/null 2>&1 || true' EXIT
+          test "$(docker inspect --format '{{.Config.User}}' market-api-ci)" = "node"
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4000/api/health/live >/dev/null; then
               curl --fail --silent http://127.0.0.1:4000/api/health/ready >/dev/null
