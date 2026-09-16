@@ -314,6 +314,31 @@ async function main() {
   assert(oversale.response.status === 400, 'inventory allowed stock to become negative');
   const inventoryMovements = await request(`/inventory/${inventoryId}/movements`, { headers: vendorHeaders });
   assert(inventoryMovements.response.status === 200 && inventoryMovements.body.length === 4, 'inventory movement history is incomplete');
+  const addedImages = await request(`/products/${productCreation.body.id}/images`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls: ['https://example.com/e2e-front.jpg', 'https://example.com/e2e-back.jpg'] }),
+  });
+  assert(addedImages.response.status === 201 && addedImages.body?.images?.length === 2, 'vendor image upload failed');
+  const imageIds = addedImages.body.images.map((image) => image.id);
+  const customerImageAccess = await request(`/products/${productCreation.body.id}/images`, {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls: ['https://example.com/unauthorized.jpg'] }),
+  });
+  assert(customerImageAccess.response.status === 403, 'customer was allowed to manage product images');
+  const reorderedImages = await request(`/products/${productCreation.body.id}/images/reorder`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageIds: [imageIds[1], imageIds[0]] }),
+  });
+  assert(reorderedImages.response.status === 201 && reorderedImages.body?.images?.[0]?.id === imageIds[1], 'vendor image reorder failed');
+  const coveredImage = await request(`/products/${productCreation.body.id}/images/cover`, {
+    method: 'POST',
+    headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageId: imageIds[1] }),
+  });
+  assert(coveredImage.response.status === 201 && coveredImage.body?.images?.find((image) => image.id === imageIds[1])?.isCover === true, 'vendor cover image selection failed');
   const publishedProduct = await request(`/products/${productCreation.body.id}/publish`, {
     method: 'POST',
     headers: { ...vendorHeaders, 'Content-Type': 'application/json' },
@@ -329,6 +354,21 @@ async function main() {
     body: JSON.stringify({ productId: productCreation.body.id, quantity: 1 }),
   });
   assert(addToCart.response.status === 201 && addToCart.body?.items?.length === 1, 'customer could not add published product to cart');
+  const cartItemId = addToCart.body.items[0].id;
+  const updatedCartItem = await request(`/cart/items/${cartItemId}`, {
+    method: 'PATCH',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: 2 }),
+  });
+  assert(updatedCartItem.response.status === 200 && updatedCartItem.body?.items?.[0]?.quantity === 2, 'customer could not update cart quantity');
+  const removedCartItem = await request(`/cart/items/${cartItemId}`, { method: 'DELETE', headers: sessionHeaders });
+  assert(removedCartItem.response.status === 200 && removedCartItem.body?.items?.length === 0, 'customer could not remove cart item');
+  const restoredCartItem = await request('/cart/items', {
+    method: 'POST',
+    headers: { ...sessionHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId: productCreation.body.id, quantity: 1 }),
+  });
+  assert(restoredCartItem.response.status === 201 && restoredCartItem.body?.items?.length === 1, 'customer could not restore cart item');
   const checkoutKey = `e2e-checkout-${Date.now()}`;
   const checkoutInput = { customerName: 'E2E Customer', phone: '0788112233', email, deliveryAddress: 'KG 1 Ave, Kigali', fulfillmentMethod: 'DELIVERY', paymentMethod: 'mobile-money' };
   const checkout = await request('/checkout', {
@@ -406,7 +446,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, product media, cart mutations, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
 }
 
 main()
