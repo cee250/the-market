@@ -198,6 +198,44 @@ async function main() {
   const adminHeaders = { Cookie: adminCookie.split(';')[0] };
   const customerAdminAccess = await request('/admin/stats', { headers: sessionHeaders });
   assert(customerAdminAccess.response.status === 403, 'customer was allowed to access admin stats');
+  const vendorPackageAdminAccess = await request('/packages/admin', { headers: vendorHeaders });
+  assert(vendorPackageAdminAccess.response.status === 403, 'vendor was allowed to access admin packages');
+  const adminPackages = await request('/packages/admin', { headers: adminHeaders });
+  assert(adminPackages.response.status === 200 && Array.isArray(adminPackages.body) && adminPackages.body.length > 0, 'admin package list is invalid');
+  const packageName = `E2E Package ${Date.now()}`;
+  const createdPackage = await request('/packages/admin', {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: packageName, description: 'Phase 40 package', price: 25000, currency: 'RWF', productLimit: 7, durationDays: 14, isActive: true }),
+  });
+  assert(createdPackage.response.status === 201 && createdPackage.body?.name === packageName && createdPackage.body?.productLimit === 7, 'admin package creation failed');
+  const updatedPackage = await request(`/packages/admin/${createdPackage.body.id}`, {
+    method: 'PATCH',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isActive: false }),
+  });
+  assert(updatedPackage.response.status === 200 && updatedPackage.body?.isActive === false, 'admin package update failed');
+  const customerCategoryAdminAccess = await request('/categories/admin', { method: 'POST', headers: { ...sessionHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Unauthorized Category' }) });
+  assert(customerCategoryAdminAccess.response.status === 403, 'customer was allowed to access category administration');
+  const categoryName = `E2E Category ${Date.now()}`;
+  const createdCategory = await request('/categories/admin', {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: categoryName, description: 'Phase 40 category', sortOrder: 99 }),
+  });
+  assert(createdCategory.response.status === 201 && createdCategory.body?.name === categoryName && createdCategory.body?.subcategories?.length === 0, 'admin category creation failed');
+  const createdSubcategory = await request(`/categories/admin/${createdCategory.body.id}/subcategories`, {
+    method: 'POST',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'E2E Subcategory', sortOrder: 1 }),
+  });
+  assert(createdSubcategory.response.status === 201 && createdSubcategory.body?.categoryId === createdCategory.body.id, 'admin subcategory creation failed');
+  const disabledCategory = await request(`/categories/admin/${createdCategory.body.id}`, {
+    method: 'PATCH',
+    headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isActive: false }),
+  });
+  assert(disabledCategory.response.status === 200 && disabledCategory.body?.isActive === false, 'admin category toggle failed');
   const vendorAdminAccess = await request('/payments/admin', { headers: vendorHeaders });
   assert(vendorAdminAccess.response.status === 403, 'vendor was allowed to access admin payments');
   const customerVendorAccess = await request('/vendor-orders', { headers: sessionHeaders });
@@ -368,7 +406,7 @@ async function main() {
   assert(vendorDashboard.response.status === 200 && vendorDashboard.body?.vendorStatus === 'ACTIVE', 'activated vendor dashboard is invalid');
   const vendorOrders = await request('/vendor-orders', { headers: vendorHeaders });
   assert(vendorOrders.response.status === 200 && Array.isArray(vendorOrders.body), 'vendor order list is invalid');
-  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, vendor onboarding, entitlements, subscriptions, variants, inventory, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
+  console.log('[e2e] PASS health, catalog, auth/session, authorization boundaries, admin packages, categories, vendor onboarding, entitlements, subscriptions, variants, inventory, analytics, admin stats, audit logs, idempotent checkout, payments, delivery notifications, and review protection');
 }
 
 main()
