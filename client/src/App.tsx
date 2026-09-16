@@ -28,6 +28,7 @@ import { VendorInventoryPage } from './pages/VendorInventoryPage';
 import { VendorFulfillmentPage } from './pages/VendorFulfillmentPage';
 import { AdminOperationsPage } from './pages/AdminOperationsPage';
 import { VendorAnalyticsPage } from './pages/VendorAnalyticsPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/order-success/:orderId" element={<OrderSuccessPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/compare" element={<ComparePage />} />
           <Route path="/login" element={<LoginPage />} />

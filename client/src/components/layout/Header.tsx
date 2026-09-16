@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   ArrowLeftRight,
+  Bell,
   Heart,
   LogOut,
   Menu,
@@ -19,6 +20,7 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useClickOutside } from '../../hooks/useClickOutside';
 import { useAsync } from '../../hooks/useAsync';
 import { api } from '../../services/api';
+import { notificationsApi } from '../../services/notifications';
 import { cx, formatPrice } from '../../lib/utils';
 import { Drawer } from '../ui/Drawer';
 import { SearchBar } from './SearchBar';
@@ -54,6 +56,7 @@ export function Header() {
   const { toast } = useToast();
   const categories = useAsync(() => api.getCategories(), []);
   const categoryItems = categories.data ?? [];
+  const notifications = useAsync(() => (user ? notificationsApi.list() : Promise.resolve({ items: [], unreadCount: 0 })), [user?.id]);
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -122,6 +125,17 @@ export function Header() {
               <ShoppingCart size={20} />
               <Badge count={cartCount} />
             </Link>
+            {user && (
+              <Link
+                to="/notifications"
+                className="relative rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-emerald-700"
+                aria-label={`Notifications (${notifications.data?.unreadCount ?? 0} unread)`}
+                title="Notifications"
+              >
+                <Bell size={20} />
+                <Badge count={notifications.data?.unreadCount ?? 0} />
+              </Link>
+            )}
 
             {/* Account */}
             <div ref={accountRef} className="relative">
