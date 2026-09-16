@@ -89,8 +89,12 @@ npm run dev:server
 npm run dev:client
 ```
 
-Useful: `npm run build` (both), `npm run typecheck` (both),
-`npm run db:rollback -w server`.
+Useful: `npm run build` (both), `npm run typecheck` (both), `npm test`,
+`npm run check:production-config -w server`, and `npm run db:rollback -w server`.
+
+Production deployment and monitoring guidance is in [`DEPLOYMENT.md`](./DEPLOYMENT.md).
+The API exposes `/api/health/live` for process liveness and `/api/health/ready` for
+database readiness.
 
 ## Environment variables
 
