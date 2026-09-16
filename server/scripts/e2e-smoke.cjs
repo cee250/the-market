@@ -112,6 +112,8 @@ async function main() {
   assert(live.body?.status === 'ok' && live.body?.api === 'up', 'liveness payload is invalid');
   const ready = await waitFor('/health/ready', 200);
   assert(ready.body?.status === 'ok' && ready.body?.database === 'up', 'readiness payload is invalid');
+  assert(ready.body?.checks?.database?.status === 'up', 'readiness database check is invalid');
+  assert(Number.isFinite(ready.body?.checks?.database?.latencyMs) && ready.body.checks.database.latencyMs >= 0, 'readiness database latency is invalid');
   assert(ready.response.headers.get('x-request-id'), 'readiness response did not include a request ID');
   assert(ready.response.headers.get('cache-control') === 'no-store', 'API response did not disable caching');
   const throttledRequests = [];

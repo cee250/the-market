@@ -15,7 +15,7 @@ Never run destructive rollback commands automatically during deployment. Take a 
 
 ## Health checks
 
-Use `GET /api/health/live` for a process-level liveness probe. Use `GET /api/health/ready` for readiness; it verifies the database connection and returns a service-unavailable response when the database is down. Route traffic only after readiness succeeds.
+Use `GET /api/health/live` for a process-level liveness probe. Use `GET /api/health/ready` for readiness; it verifies the database connection and returns a service-unavailable response when the database is down. The readiness payload includes `checks.database.status` and `checks.database.latencyMs` for dependency diagnostics. Route traffic only after readiness succeeds.
 
 ## Security and performance hardening
 
