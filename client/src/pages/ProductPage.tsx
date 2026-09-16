@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Carousel, CarouselItem } from '../components/product/Carousel';
 import { ProductCard } from '../components/product/ProductCard';
-import { getMarketplaceReviews } from '../services/marketplace';
+import { createProductReview, getMarketplaceReviews } from '../services/marketplace';
 import { Breadcrumbs } from '../components/ui/Breadcrumbs';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Price } from '../components/ui/Price';
@@ -22,6 +22,7 @@ import { RatingStars } from '../components/ui/RatingStars';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { LineSkeleton } from '../components/ui/Skeletons';
 import { SITE } from '../config/site';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useCompare, COMPARE_LIMIT } from '../context/CompareContext';
 import { useToast } from '../context/ToastContext';
@@ -61,6 +62,7 @@ export function ProductPage() {
   const compare = useCompare();
   const wishlist = useWishlist();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const product = useAsync(() => api.getProduct(id ?? ''), [id]);
   const related = useAsync(
@@ -72,6 +74,10 @@ export function ProductPage() {
   const [tab, setTab] = useState<Tab>('Description');
 
   const reviews = useAsync(() => (product.data ? getMarketplaceReviews(product.data.slug ?? product.data.id) : Promise.resolve([])), [product.data?.slug, product.data?.id]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const submitReview = async () => { if (!product.data || reviewComment.trim().length < 3) { toast('Write at least a few words about the product.', 'info'); return; } setReviewSubmitting(true); try { await createProductReview(product.data.id, { rating: reviewRating, comment: reviewComment.trim() }); setReviewComment(''); toast('Thanks for sharing your review!'); reviews.reload(); } catch (error) { toast(error instanceof Error ? error.message : 'Unable to submit review.', 'info'); } finally { setReviewSubmitting(false); } };
 
   if (product.loading) {
     return (
@@ -355,6 +361,14 @@ export function ProductPage() {
                 </article>
               ))}
               {(reviews.data ?? []).length === 0 && <p className="text-sm text-slate-500">No reviews yet.</p>}
+              {user && (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+                  <h3 className="text-sm font-bold text-slate-900">Share your experience</h3>
+                  <div className="mt-3 flex items-center gap-3"><label className="text-sm text-slate-600" htmlFor="review-rating">Rating</label><select id="review-rating" value={reviewRating} onChange={(event) => setReviewRating(Number(event.target.value))} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm">{[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}</select></div>
+                  <textarea value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} rows={3} placeholder="What did you think?" className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
+                  <button type="button" disabled={reviewSubmitting} onClick={() => void submitReview()} className="mt-3 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{reviewSubmitting ? 'Submitting…' : 'Submit review'}</button>
+                </div>
+              )}
             </div>
           )}
         </div>
