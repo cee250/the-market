@@ -9,6 +9,7 @@ import {
   Package,
   ShoppingBag,
   ShoppingCart,
+  Store,
   User,
 } from 'lucide-react';
 import { SITE } from '../../config/site';
@@ -98,6 +99,13 @@ export function Header() {
           <SearchBar className="hidden flex-1 md:block md:max-w-2xl" />
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <Link
+              to="/register/vendor"
+              className="hidden items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 sm:flex sm:text-sm"
+            >
+              <Store size={16} />
+              <span>Register as Vendor</span>
+            </Link>
             <Link
               to="/compare"
               className="relative hidden rounded-lg p-2 text-slate-600 transition hover:bg-slate-100 hover:text-emerald-700 sm:block"
@@ -269,6 +277,13 @@ export function Header() {
             className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
             Help & FAQ
+          </Link>
+          <Link
+            to="/register/vendor"
+            onClick={closeMobile}
+            className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-amber-500 px-3 py-2.5 text-sm font-bold text-white transition hover:bg-amber-600"
+          >
+            <Store size={16} /> Register as Vendor
           </Link>
           {user ? (
             <button
