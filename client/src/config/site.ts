@@ -4,6 +4,7 @@
  */
 export const SITE = {
   name: 'Market',
+  url: import.meta.env.VITE_SITE_URL || 'https://market.rw',
   tagline: 'Everything you need, delivered.',
   currencySymbol: 'R₣',
   freeShippingThreshold: 25000,

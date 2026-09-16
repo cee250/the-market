@@ -28,7 +28,8 @@ marketplace with multi-vendor cart, checkout and order tracking.
 | **Phase 14** | **Fulfillment, vendor-order isolation, delivery details** | ✅ **Done** |
 | **Phase 15** | **Marketplace browsing, search, filters, sorting, product details** | ✅ **Done** |
 | **Phase 16** | **Platform operations, audit visibility, strict validation hardening** | ✅ **Done** |
-| Phase 17–18 | Final hardening | ⏳ Planned |
+| **Phase 17** | **Analytics, notifications, SEO** | ✅ **Done** |
+| Phase 18 | Security hardening, performance, testing, deployment, monitoring | ⏳ Planned |
 
 ## Architecture
 
