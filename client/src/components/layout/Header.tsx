@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   User,
 } from 'lucide-react';
-import { CATEGORIES } from '../../data/categories';
 import { SITE } from '../../config/site';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -18,6 +17,8 @@ import { useCompare } from '../../context/CompareContext';
 import { useToast } from '../../context/ToastContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useClickOutside } from '../../hooks/useClickOutside';
+import { useAsync } from '../../hooks/useAsync';
+import { api } from '../../services/api';
 import { cx, formatPrice } from '../../lib/utils';
 import { Drawer } from '../ui/Drawer';
 import { SearchBar } from './SearchBar';
@@ -51,6 +52,8 @@ export function Header() {
   const { count: compareCount } = useCompare();
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const categories = useAsync(() => api.getCategories(), []);
+  const categoryItems = categories.data ?? [];
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -189,7 +192,7 @@ export function Header() {
             <NavLink to="/shop" end className={navLinkClass}>
               All Products
             </NavLink>
-            {CATEGORIES.map((c) => (
+            {categoryItems.map((c) => (
               <NavLink key={c.slug} to={`/category/${c.slug}`} className={navLinkClass}>
                 {c.shortName}
               </NavLink>
@@ -211,7 +214,7 @@ export function Header() {
           >
             All Products
           </Link>
-          {CATEGORIES.map((c) => (
+          {categoryItems.map((c) => (
             <Link
               key={c.slug}
               to={`/category/${c.slug}`}
