@@ -84,3 +84,25 @@
 .vendor-workspace .text-slate-600 { color: #94a3b8 !important; }
 .vendor-workspace .border-slate-100, .vendor-workspace .border-slate-200 { border-color: #334155 !important; }
 .vendor-workspace input, .vendor-workspace select { background-color: #0f172a; color: #f8fafc; border-color: #475569; }
+
+/* Mobile dashboard ergonomics: keep controls thumb-friendly and prevent page-level horizontal drift. */
+.vendor-workspace, .min-h-screen.bg-slate-950 { overflow-x: hidden; }
+.vendor-workspace .overflow-x-auto, .min-h-screen.bg-slate-950 .overflow-x-auto { max-width: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior-inline: contain; }
+.vendor-workspace button, .vendor-workspace a, .min-h-screen.bg-slate-950 button, .min-h-screen.bg-slate-950 a { touch-action: manipulation; }
+.vendor-workspace input, .vendor-workspace select, .vendor-workspace button { min-height: 44px; }
+.vendor-workspace form { width: 100%; }
+@media (max-width: 639px) {
+  .vendor-workspace { padding-top: 1.25rem; padding-bottom: 2rem; }
+  .vendor-workspace table { min-width: 720px; }
+  .vendor-workspace .overflow-x-auto { margin-inline: -0.25rem; padding-inline: 0.25rem; }
+  .vendor-workspace form.grid { grid-template-columns: minmax(0, 1fr); }
+  .vendor-workspace form.grid > * { grid-column: auto !important; width: 100%; }
+  .vendor-workspace h1 { font-size: 1.25rem; line-height: 1.4; }
+  .vendor-workspace .flex.flex-wrap { gap: 0.5rem; }
+  .vendor-workspace .flex.flex-wrap button { flex: 1 1 auto; min-width: 7rem; }
+  .min-h-screen.bg-slate-950 main { min-width: 0; }
+  .min-h-screen.bg-slate-950 header { padding: 1rem; }
+  .min-h-screen.bg-slate-950 header h1 { font-size: 1.35rem; line-height: 1.35; }
+  .min-h-screen.bg-slate-950 main > .p-5, .min-h-screen.bg-slate-950 main > .p-5.sm\:p-8 { padding: 1rem; }
+  .min-h-screen.bg-slate-950 table { min-width: 780px; }
+}
