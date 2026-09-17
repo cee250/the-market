@@ -11,7 +11,15 @@ async function getHandler(): Promise<ReturnType<typeof serverless>> {
     const { createApp } = await import('../../server/dist/main');
     handlerPromise = createApp().then(async (app) => {
       await app.init();
-      return serverless(app.getHttpAdapter().getInstance());
+      return serverless(app.getHttpAdapter().getInstance(), {
+        request: (request) => {
+          if (request.body) {
+            request.headers['content-type'] = 'application/json';
+            request.headers['content-length'] = String(Buffer.byteLength(request.body));
+          }
+          return request;
+        },
+      });
     });
   }
   return handlerPromise;
