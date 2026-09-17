@@ -45,7 +45,7 @@ export class VendorsService {
 
     await this.db.tx(async (trx) => {
       await trx('vendor_profiles').where({ id: vendorId }).update({ status: rule.to, updated_at: trx.fn.now() });
-      if (rule.to === 'ACTIVE') await trx('users').where({ id: vendor.user_id }).update({ is_active: true });
+      if (rule.to === 'ACTIVE') await trx('users').where({ id: vendor.user_id }).update({ is_active: true, email_verified_at: trx.fn.now() });
       if (rule.to === 'ACTIVE') {
         const verified = await trx('vendor_payments').where({ vendor_profile_id: vendorId, status: 'VERIFIED' }).first();
         if (!verified) {

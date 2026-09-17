@@ -17,6 +17,18 @@ export class ProductsService {
 
   async update(user: AuthUser, id: string, input: Partial<ProductInput>) { const vendor = await this.vendorFor(user); const product = await this.owned(vendor.id, id); if (input.name !== undefined && input.name.trim().length < 2) throw new BadRequestException('Product name is too short'); if (input.price !== undefined && (!Number.isInteger(input.price) || input.price < 0)) throw new BadRequestException('Product price is invalid'); await this.assertCategory(input.categoryId, input.subcategoryId); const [row] = await this.db.connection('products').where({ id }).update({ ...(input.name !== undefined ? { name: input.name.trim() } : {}), ...(input.description !== undefined ? { description: input.description.trim() || null } : {}), ...(input.price !== undefined ? { price: input.price } : {}), ...(input.currency !== undefined ? { currency: input.currency.trim().toUpperCase() } : {}), ...(input.sku !== undefined ? { sku: input.sku.trim() || null } : {}), ...(input.categoryId !== undefined ? { category_id: input.categoryId || null } : {}), ...(input.subcategoryId !== undefined ? { subcategory_id: input.subcategoryId || null } : {}), ...(input.location !== undefined ? { location: input.location.trim() } : {}), ...(input.condition !== undefined ? { condition: input.condition.trim() } : {}), ...(input.availability !== undefined ? { availability: input.availability.trim() } : {}), updated_at: this.db.connection.fn.now() }).returning('*'); if (input.imageUrls) { await this.db.connection('product_images').where({ product_id: id }).del(); await this.insertImages(this.db.connection, id, input.imageUrls); } await this.db.connection('audit_logs').insert({ actor_id: user.id, action: 'PRODUCT_UPDATED', entity: 'product', entity_id: id, metadata: { sku: input.sku ?? product.sku } }); return this.toDto(row ?? product); }
 
+  async resetCatalog(user: AuthUser) {
+    if (user.role !== 'ADMIN') throw new ForbiddenException('Only admins can reset the catalog');
+    await this.db.tx(async (trx) => {
+      await trx('cart_items').del();
+      await trx('order_items').del();
+      await trx('vendor_orders').del();
+      await trx('products').del();
+      await trx('audit_logs').where('entity', 'product').del();
+    });
+    return { deleted: true, message: 'Catalog reset complete' };
+  }
+
   async remove(user: AuthUser, id: string) { const vendor = await this.vendorFor(user); await this.owned(vendor.id, id); await this.db.connection('products').where({ id }).del(); await this.db.connection('audit_logs').insert({ actor_id: user.id, action: 'PRODUCT_DELETED', entity: 'product', entity_id: id, metadata: {} }); return { deleted: true }; }
 
   async publish(user: AuthUser, id: string, status: ProductStatus) { const vendor = await this.vendorFor(user); const product = await this.owned(vendor.id, id); if (status === 'PUBLISHED') { if (vendor.status !== 'ACTIVE') throw new ForbiddenException('Only active vendors can publish products'); const count = await this.db.connection('products').where({ vendor_profile_id: vendor.id, status: 'PUBLISHED' }).whereNot({ id }).count('id as count').first(); await this.packages.assertCanPublishProduct(vendor.id, Number(count?.count ?? 0)); } await this.db.connection('products').where({ id }).update({ status, updated_at: this.db.connection.fn.now() }); await this.db.connection('audit_logs').insert({ actor_id: user.id, action: status === 'PUBLISHED' ? 'PRODUCT_PUBLISHED' : 'PRODUCT_UNPUBLISHED', entity: 'product', entity_id: id, metadata: {} }); return this.toDto(await this.db.connection('products').where({ id }).first()); }

@@ -76,3 +76,11 @@
     background: rgb(16 185 129 / 0.25);
   }
 }
+
+.vendor-workspace .bg-white { background-color: #111827 !important; }
+.vendor-workspace .bg-slate-50 { background-color: #1f2937 !important; }
+.vendor-workspace .text-slate-900 { color: #f8fafc !important; }
+.vendor-workspace .text-slate-500, .vendor-workspace .text-slate-400 { color: #cbd5e1 !important; }
+.vendor-workspace .text-slate-600 { color: #94a3b8 !important; }
+.vendor-workspace .border-slate-100, .vendor-workspace .border-slate-200 { border-color: #334155 !important; }
+.vendor-workspace input, .vendor-workspace select { background-color: #0f172a; color: #f8fafc; border-color: #475569; }

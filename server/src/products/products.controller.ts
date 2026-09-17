@@ -54,6 +54,7 @@ export class ProductsController {
   @Post() create(@Req() request: RequestWithUser, @Body() body: ProductDto) { return this.products.create(request.user, body); }
   @Patch(':id') update(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: ProductUpdateDto) { return this.products.update(request.user, id, body); }
   @Delete(':id') remove(@Req() request: RequestWithUser, @Param('id') id: string) { return this.products.remove(request.user, id); }
+  @Post('admin/reset-catalog') resetCatalog(@Req() request: RequestWithUser) { return this.products.resetCatalog(request.user); }
   @Post(':id/publish') publish(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: PublishDto) { return this.products.publish(request.user, id, body.status); }
   @Post(':id/reviews') review(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: ReviewDto) { return this.products.createReview(request.user, id, body.rating, body.comment); }
   @Post(':id/images') addImages(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: ImagesDto) { return this.products.addImages(request.user, id, body.urls); }

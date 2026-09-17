@@ -13,6 +13,8 @@ import { DatabaseService } from '../database/database.service';
 import { MailService } from './mail.service';
 
 const SESSION_COOKIE = 'market_session';
+const ADMIN_SESSION_COOKIE = 'market_admin_session';
+const VENDOR_SESSION_COOKIE = 'market_vendor_session';
 const SESSION_DAYS = 30;
 const VERIFICATION_HOURS = 24;
 const RESET_MINUTES = 30;
@@ -103,7 +105,8 @@ export class AuthService {
       user_agent: request?.headers['user-agent'],
     });
     const secure = this.config.get<string>('NODE_ENV') === 'production';
-    const cookie = `${SESSION_COOKIE}=${session.token}; Max-Age=${SESSION_DAYS * 24 * 60 * 60}; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
+    const cookieName = user.role === 'ADMIN' ? ADMIN_SESSION_COOKIE : user.role === 'VENDOR' ? VENDOR_SESSION_COOKIE : SESSION_COOKIE;
+    const cookie = `${cookieName}=${session.token}; Max-Age=${SESSION_DAYS * 24 * 60 * 60}; Path=/; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
     return { user: this.toUser(user), cookie };
   }
 
@@ -199,7 +202,9 @@ export class AuthService {
   }
 
   async getUserFromCookie(cookieHeader?: string): Promise<AuthUser | null> {
-    const token = cookieHeader?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1);
+    const parts = cookieHeader?.split(';').map((part) => part.trim()) ?? [];
+    const candidates = [ADMIN_SESSION_COOKIE, VENDOR_SESSION_COOKIE, SESSION_COOKIE].map((name) => ({ name, token: parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1) })).filter((item): item is { name: string; token: string } => Boolean(item.token));
+    const token = candidates[0]?.token;
     if (!token) return null;
     const row = (await this.db.connection('sessions as s')
       .join('users as u', 'u.id', 's.user_id')
@@ -214,8 +219,9 @@ export class AuthService {
   }
 
   async logout(cookieHeader?: string): Promise<void> {
-    const token = cookieHeader?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${SESSION_COOKIE}=`))?.slice(SESSION_COOKIE.length + 1);
-    if (token) await this.db.connection('sessions').where({ token_hash: this.hashToken(token) }).del();
+    const parts = cookieHeader?.split(';').map((part) => part.trim()) ?? [];
+    const tokens = [ADMIN_SESSION_COOKIE, VENDOR_SESSION_COOKIE, SESSION_COOKIE].map((name) => parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1)).filter((token): token is string => Boolean(token));
+    if (tokens.length) await this.db.connection('sessions').whereIn('token_hash', tokens.map((token) => this.hashToken(token))).del();
   }
 
   async verifyEmail(token: string) {
