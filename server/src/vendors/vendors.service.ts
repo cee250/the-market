@@ -26,9 +26,11 @@ export class VendorsService {
     const totalProducts = this.db.connection('products as product_count').count('*').whereRaw('product_count.vendor_profile_id = vp.id');
     const publishedProducts = this.db.connection('products as published_count').count('*').whereRaw("published_count.vendor_profile_id = vp.id AND published_count.status = 'PUBLISHED'");
     const income = this.db.connection('vendor_orders as income_orders').sum('income_orders.subtotal').join('orders as income_parent', 'income_parent.id', 'income_orders.order_id').whereRaw('income_orders.vendor_profile_id = vp.id').whereNot('income_parent.status', 'CANCELLED');
+    const subscriptionStart = this.db.connection('subscriptions as current_subscription').select('current_subscription.start_date').whereRaw('current_subscription.vendor_profile_id = vp.id').limit(1);
+    const subscriptionEnd = this.db.connection('subscriptions as current_subscription_end').select('current_subscription_end.end_date').whereRaw('current_subscription_end.vendor_profile_id = vp.id').limit(1);
     const rows = await this.db.connection('vendor_profiles as vp')
       .join('users as u', 'u.id', 'vp.user_id')
-      .select('vp.id', 'vp.user_id', 'vp.business_name', 'vp.slug', 'vp.phone', 'vp.location', 'vp.status', 'vp.created_at', 'vp.updated_at', 'u.name', 'u.email', 'u.email_verified_at', latestAmount.as('latest_payment_amount'), latestCurrency.as('latest_payment_currency'), latestStatus.as('latest_payment_status'), totalProducts.as('total_products'), publishedProducts.as('published_products'), income.as('income'))
+      .select('vp.id', 'vp.user_id', 'vp.business_name', 'vp.slug', 'vp.phone', 'vp.location', 'vp.status', 'vp.created_at', 'vp.updated_at', 'u.name', 'u.email', 'u.email_verified_at', latestAmount.as('latest_payment_amount'), latestCurrency.as('latest_payment_currency'), latestStatus.as('latest_payment_status'), totalProducts.as('total_products'), publishedProducts.as('published_products'), income.as('income'), subscriptionStart.as('subscription_start_date'), subscriptionEnd.as('subscription_end_date'))
       .orderBy('vp.created_at', 'desc');
     return rows.map((row) => this.toDto(row));
   }
@@ -48,7 +50,7 @@ export class VendorsService {
       if (rule.to === 'DEACTIVATED') await this.packages.deactivateEntitlement(trx, vendorId, admin.id);
       await trx('audit_logs').insert({ actor_id: admin.id, action: `VENDOR_${action}`, entity: 'vendor_profile', entity_id: vendorId, metadata: { from: vendor.status, to: rule.to, note: note?.trim() || null } });
     });
-    const updated = await this.db.connection('vendor_profiles as vp').join('users as u', 'u.id', 'vp.user_id').where('vp.id', vendorId).select('vp.*', 'u.name', 'u.email', 'u.email_verified_at').first();
+    const updated = await this.db.connection('vendor_profiles as vp').join('users as u', 'u.id', 'vp.user_id').leftJoin('subscriptions as s', 's.vendor_profile_id', 'vp.id').where('vp.id', vendorId).select('vp.*', 'u.name', 'u.email', 'u.email_verified_at', 's.start_date as subscription_start_date', 's.end_date as subscription_end_date').first();
     return this.toDto(updated);
   }
 
@@ -73,6 +75,6 @@ export class VendorsService {
   }
 
   private toDto(row: any) {
-    return { id: row.id, userId: row.user_id, name: row.name, email: row.email, businessName: row.business_name, slug: row.slug, phone: row.phone, location: row.location, status: row.status, emailVerified: Boolean(row.email_verified_at), createdAt: row.created_at, updatedAt: row.updated_at, latestPayment: row.latest_payment_status ? { amount: row.latest_payment_amount, currency: row.latest_payment_currency, status: row.latest_payment_status } : null };
+    return { id: row.id, userId: row.user_id, name: row.name, email: row.email, businessName: row.business_name, slug: row.slug, phone: row.phone, location: row.location, status: row.status, emailVerified: Boolean(row.email_verified_at), createdAt: row.created_at, updatedAt: row.updated_at, subscriptionStartDate: row.subscription_start_date ?? null, subscriptionEndDate: row.subscription_end_date ?? null, latestPayment: row.latest_payment_status ? { amount: row.latest_payment_amount, currency: row.latest_payment_currency, status: row.latest_payment_status } : null };
   }
 }
