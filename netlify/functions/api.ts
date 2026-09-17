@@ -28,6 +28,9 @@ export const handler = async (
     requestEvent.path = stripFunctionPrefix(requestEvent.path);
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
     requestEvent.requestPath = stripFunctionPrefix(requestEvent.requestPath);
+    if (requestEvent.body && typeof requestEvent.body === 'string') {
+      requestEvent.headers = { ...(requestEvent.headers ?? {}), 'content-type': 'application/json' };
+    }
     return appHandler(requestEvent, context);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown API startup error';
