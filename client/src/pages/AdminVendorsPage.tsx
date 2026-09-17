@@ -4,7 +4,7 @@ import { Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { vendorsApi, type ManagedVendor } from '../services/vendors';
 
-const actionsFor = (status: string) => status === 'PENDING_APPROVAL' ? ['ACTIVATE', 'DEACTIVATE'] : status === 'ACTIVE' || status === 'EXPIRING_SOON' || status === 'EXPIRED' ? ['SUSPEND', 'DEACTIVATE'] : status === 'SUSPENDED' || status === 'DEACTIVATED' ? ['REACTIVATE'] : ['DEACTIVATE'];
+const actionsFor = (status: string) => status === 'PENDING_PAYMENT' || status === 'PENDING_APPROVAL' ? ['ACTIVATE', 'DEACTIVATE'] : status === 'ACTIVE' || status === 'EXPIRING_SOON' || status === 'EXPIRED' ? ['SUSPEND', 'DEACTIVATE'] : status === 'SUSPENDED' || status === 'DEACTIVATED' ? ['REACTIVATE'] : ['DEACTIVATE'];
 const formatDate = (value: string | null) => value ? new Date(value).toLocaleDateString() : 'Not activated';
 
 export function AdminVendorsPage() {

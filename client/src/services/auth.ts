@@ -14,7 +14,7 @@ export const authApi = {
   async register(name: string, email: string, password: string): Promise<AuthResponse> {
     return request<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
   },
-  async registerVendor(input: { name: string; businessName: string; email: string; phone: string; location: string; password: string; confirmPassword: string; termsVersion: string }): Promise<AuthResponse> {
+  async registerVendor(input: { name: string; businessName: string; email: string; phone: string; location: string; password: string; confirmPassword: string; termsVersion: string; packageName: string }): Promise<AuthResponse> {
     return request<AuthResponse>('/auth/register/vendor', { method: 'POST', body: JSON.stringify(input) });
   },
   async login(email: string, password: string): Promise<AuthResponse> {

@@ -8,7 +8,7 @@ type VendorStatus = 'PENDING_PAYMENT' | 'PENDING_APPROVAL' | 'ACTIVE' | 'EXPIRIN
 type VendorAction = 'ACTIVATE' | 'SUSPEND' | 'DEACTIVATE' | 'REACTIVATE';
 
 const transitions: Record<VendorAction, { from: VendorStatus[]; to: VendorStatus }> = {
-  ACTIVATE: { from: ['PENDING_APPROVAL'], to: 'ACTIVE' },
+  ACTIVATE: { from: ['PENDING_PAYMENT', 'PENDING_APPROVAL'], to: 'ACTIVE' },
   SUSPEND: { from: ['ACTIVE', 'EXPIRING_SOON', 'EXPIRED', 'PENDING_APPROVAL'], to: 'SUSPENDED' },
   DEACTIVATE: { from: ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'ACTIVE', 'EXPIRING_SOON', 'EXPIRED', 'SUSPENDED'], to: 'DEACTIVATED' },
   REACTIVATE: { from: ['SUSPENDED', 'DEACTIVATED'], to: 'ACTIVE' },
@@ -46,7 +46,15 @@ export class VendorsService {
     await this.db.tx(async (trx) => {
       await trx('vendor_profiles').where({ id: vendorId }).update({ status: rule.to, updated_at: trx.fn.now() });
       if (rule.to === 'ACTIVE') await trx('users').where({ id: vendor.user_id }).update({ is_active: true });
-      if (rule.to === 'ACTIVE') await this.packages.activateEntitlement(trx, vendorId, admin.id);
+      if (rule.to === 'ACTIVE') {
+        const verified = await trx('vendor_payments').where({ vendor_profile_id: vendorId, status: 'VERIFIED' }).first();
+        if (!verified) {
+          const requested = await trx('vendor_profiles as vp').join('packages as p', 'p.name', 'vp.requested_package_name').where('vp.id', vendorId).select('p.id as package_id', 'p.price', 'p.currency').first();
+          if (!requested) throw new BadRequestException('The vendor package is unavailable; update the package before activation');
+          await trx('vendor_payments').insert({ vendor_profile_id: vendorId, package_id: requested.package_id, amount: requested.price, currency: requested.currency, payment_method: 'WHATSAPP', reference: 'WHATSAPP_ADMIN_APPROVED', notes: 'Payment confirmed externally by admin', status: 'VERIFIED', reviewed_at: trx.fn.now(), reviewed_by: admin.id, review_note: note?.trim() || 'Approved after WhatsApp payment confirmation' });
+        }
+        await this.packages.activateEntitlement(trx, vendorId, admin.id);
+      }
       if (rule.to === 'ACTIVE') await this.subscriptions.activateForVendor(trx, vendorId, admin.id);
       if (rule.to === 'DEACTIVATED') await this.packages.deactivateEntitlement(trx, vendorId, admin.id);
       await trx('audit_logs').insert({ actor_id: admin.id, action: `VENDOR_${action}`, entity: 'vendor_profile', entity_id: vendorId, metadata: { from: vendor.status, to: rule.to, note: note?.trim() || null } });

@@ -66,6 +66,9 @@ class VendorRegisterDto {
   @IsString()
   @MinLength(1)
   termsVersion!: string;
+  @IsString()
+  @MinLength(1)
+  packageName!: string;
 }
 
 class VerifyEmailDto {
