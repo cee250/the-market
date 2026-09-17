@@ -121,9 +121,11 @@ export class AuthController {
   @Post('logout')
   @HttpCode(204)
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
-    await this.auth.logout(request.headers.cookie);
+    const scope = String(request.headers['x-session-scope'] ?? '');
+    await this.auth.logout(request.headers.cookie, scope);
     const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-    response.setHeader('Set-Cookie', [AuthService.sessionCookieName(), 'market_admin_session', 'market_vendor_session'].map((name) => `${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`).join(', '));
+    const names = scope === 'admin' ? ['market_admin_session'] : scope === 'vendor' ? ['market_vendor_session'] : [AuthService.sessionCookieName()];
+    response.setHeader('Set-Cookie', names.map((name) => `${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax${secure}`).join(', '));
   }
 
   @Get('me')

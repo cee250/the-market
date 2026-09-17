@@ -201,9 +201,10 @@ export class AuthService {
     return this.issueSession(user, request);
   }
 
-  async getUserFromCookie(cookieHeader?: string): Promise<AuthUser | null> {
+  async getUserFromCookie(cookieHeader?: string, scope?: string): Promise<AuthUser | null> {
     const parts = cookieHeader?.split(';').map((part) => part.trim()) ?? [];
-    const candidates = [ADMIN_SESSION_COOKIE, VENDOR_SESSION_COOKIE, SESSION_COOKIE].map((name) => ({ name, token: parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1) })).filter((item): item is { name: string; token: string } => Boolean(item.token));
+    const names = scope === 'admin' ? [ADMIN_SESSION_COOKIE] : scope === 'vendor' ? [VENDOR_SESSION_COOKIE] : [ADMIN_SESSION_COOKIE, VENDOR_SESSION_COOKIE, SESSION_COOKIE];
+    const candidates = names.map((name) => ({ name, token: parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1) })).filter((item): item is { name: string; token: string } => Boolean(item.token));
     const token = candidates[0]?.token;
     if (!token) return null;
     const row = (await this.db.connection('sessions as s')
@@ -218,9 +219,10 @@ export class AuthService {
     return this.toUser(row);
   }
 
-  async logout(cookieHeader?: string): Promise<void> {
+  async logout(cookieHeader?: string, scope?: string): Promise<void> {
     const parts = cookieHeader?.split(';').map((part) => part.trim()) ?? [];
-    const tokens = [ADMIN_SESSION_COOKIE, VENDOR_SESSION_COOKIE, SESSION_COOKIE].map((name) => parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1)).filter((token): token is string => Boolean(token));
+    const names = scope === 'admin' ? [ADMIN_SESSION_COOKIE] : scope === 'vendor' ? [VENDOR_SESSION_COOKIE] : [SESSION_COOKIE];
+    const tokens = names.map((name) => parts.find((part) => part.startsWith(`${name}=`))?.slice(name.length + 1)).filter((token): token is string => Boolean(token));
     if (tokens.length) await this.db.connection('sessions').whereIn('token_hash', tokens.map((token) => this.hashToken(token))).del();
   }
 
