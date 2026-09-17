@@ -36,6 +36,19 @@ export const handler = async (
     requestEvent.path = stripFunctionPrefix(requestEvent.path);
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
     requestEvent.requestPath = stripFunctionPrefix(requestEvent.requestPath);
+    if (typeof requestEvent.body === 'string') {
+      try {
+        requestEvent.body = JSON.parse(requestEvent.body) as typeof requestEvent.body;
+      } catch {
+        // Leave non-JSON bodies untouched for the normal parser/validation path.
+      }
+    } else if (Array.isArray(requestEvent.body) && requestEvent.body.every((part) => typeof part === 'string')) {
+      try {
+        requestEvent.body = JSON.parse(requestEvent.body.join('')) as typeof requestEvent.body;
+      } catch {
+        // Leave malformed bodies untouched for the normal validation path.
+      }
+    }
     if (requestEvent.body && typeof requestEvent.body === 'string') {
       const headers = Object.fromEntries(
         Object.entries(requestEvent.headers ?? {}).filter(([key]) => key.toLowerCase() !== 'content-type'),
