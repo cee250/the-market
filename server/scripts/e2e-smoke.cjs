@@ -106,6 +106,8 @@ async function main() {
     CORS_ORIGIN: `http://localhost:${port}`,
     DATABASE_URL: databaseUrl,
     JWT_SECRET: 'e2e-only-secret-not-for-production',
+    RATE_LIMIT_MAX: '10',
+    RATE_LIMIT_WINDOW_MS: '60000',
   });
 
   const live = await waitFor('/health/live', 200);
