@@ -29,6 +29,13 @@ export async function createApp() {
         // Leave malformed bodies for the normal validation pipeline to reject.
       }
     }
+    if (Array.isArray(request.body) && request.body.every((part) => typeof part === 'string')) {
+      try {
+        request.body = JSON.parse(request.body.join('')) as unknown;
+      } catch {
+        // Leave malformed bodies for the normal validation pipeline to reject.
+      }
+    }
     next();
   });
   httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
