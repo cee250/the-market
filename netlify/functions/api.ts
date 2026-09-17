@@ -29,7 +29,10 @@ export const handler = async (
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
     requestEvent.requestPath = stripFunctionPrefix(requestEvent.requestPath);
     if (requestEvent.body && typeof requestEvent.body === 'string') {
-      requestEvent.headers = { ...(requestEvent.headers ?? {}), 'content-type': 'application/json' };
+      const headers = Object.fromEntries(
+        Object.entries(requestEvent.headers ?? {}).filter(([key]) => key.toLowerCase() !== 'content-type'),
+      );
+      requestEvent.headers = { ...headers, 'content-type': 'application/json' };
     }
     return appHandler(requestEvent, context);
   } catch (error) {
