@@ -171,7 +171,9 @@ export class AuthService {
       let slug = slugBase;
       for (let suffix = 2; await trx('vendor_profiles').where({ slug }).first(); suffix += 1) slug = `${slugBase}-${suffix}`;
       const [createdUser] = (await trx('users').insert({ name: input.name.trim(), email: normalizedEmail, password_hash: passwordHash, role: 'VENDOR', is_active: false }).returning('*')) as UserRow[];
-      await trx('vendor_profiles').insert({ user_id: createdUser.id, business_name: input.businessName.trim(), slug, phone: input.phone.trim(), location: input.location.trim(), requested_package_name: input.packageName.trim(), status: 'PENDING_PAYMENT' });
+      const vendorProfile = { user_id: createdUser.id, business_name: input.businessName.trim(), slug, phone: input.phone.trim(), location: input.location.trim(), status: 'PENDING_PAYMENT' as const } as Record<string, unknown>;
+      if (await trx.schema.hasColumn('vendor_profiles', 'requested_package_name')) vendorProfile.requested_package_name = input.packageName.trim();
+      await trx('vendor_profiles').insert(vendorProfile);
       await trx('terms_acceptances').insert({ user_id: createdUser.id, terms_version: input.termsVersion.trim(), ip_address: request?.ip, user_agent: request?.headers['user-agent'] });
       const token = this.createToken(VERIFICATION_HOURS * 60 * 60 * 1000);
       await trx('email_verification_tokens').insert({ user_id: createdUser.id, token_hash: token.tokenHash, expires_at: token.expiresAt });
