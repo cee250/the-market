@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { authApi } from '../services/auth';
 import type { User } from '../types';
 
@@ -16,9 +16,11 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const authVersion = useRef(0);
 
   useEffect(() => {
-    authApi.me().then((result) => setUser(result.user)).catch(() => setUser(null)).finally(() => setLoading(false));
+    const versionAtStart = authVersion.current;
+    authApi.me().then((result) => { if (authVersion.current === versionAtStart) setUser(result.user); }).catch(() => { if (authVersion.current === versionAtStart) setUser(null); }).finally(() => { if (authVersion.current === versionAtStart) setLoading(false); });
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
@@ -26,22 +28,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     login: async (email, password) => {
       const result = await authApi.login(email, password);
+      authVersion.current += 1;
       setUser(result.user);
+      setLoading(false);
       return result.user;
     },
     register: async (name, email, password) => {
       const result = await authApi.register(name, email, password);
+      authVersion.current += 1;
       setUser(result.user);
+      setLoading(false);
       return result;
     },
     registerVendor: async (input) => {
       const result = await authApi.registerVendor(input);
+      authVersion.current += 1;
       setUser(result.user);
+      setLoading(false);
       return result;
     },
     logout: async () => {
       await authApi.logout().catch(() => undefined);
+      authVersion.current += 1;
       setUser(null);
+      setLoading(false);
     },
   }), [loading, user]);
 
