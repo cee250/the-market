@@ -62,7 +62,7 @@ export async function createApp() {
   const attempts = new Map<string, { count: number; resetAt: number }>();
   httpAdapter.use('/auth', (request: Request, response: Response, next: NextFunction) => {
     if (request.method === 'GET') return next();
-    const key = `${request.ip ?? 'unknown'}:${request.path}`;
+    const key = request.ip ?? 'unknown';
     const now = Date.now();
     const current = attempts.get(key);
     const bucket = current && current.resetAt > now ? current : { count: 0, resetAt: now + rateLimitWindowMs };
