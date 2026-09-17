@@ -49,7 +49,10 @@ export class VendorsService {
       if (rule.to === 'ACTIVE') {
         const verified = await trx('vendor_payments').where({ vendor_profile_id: vendorId, status: 'VERIFIED' }).first();
         if (!verified) {
-          const requested = await trx('vendor_profiles as vp').join('packages as p', 'p.name', 'vp.requested_package_name').where('vp.id', vendorId).select('p.id as package_id', 'p.price', 'p.currency').first();
+          const hasRequestedPackage = await trx.schema.hasColumn('vendor_profiles', 'requested_package_name');
+          const requested = hasRequestedPackage
+            ? await trx('vendor_profiles as vp').join('packages as p', 'p.name', 'vp.requested_package_name').where('vp.id', vendorId).select('p.id as package_id', 'p.price', 'p.currency').first()
+            : await trx('packages').where({ name: 'Basic', is_active: true }).select('id as package_id', 'price', 'currency').first();
           if (!requested) throw new BadRequestException('The vendor package is unavailable; update the package before activation');
           await trx('vendor_payments').insert({ vendor_profile_id: vendorId, package_id: requested.package_id, amount: requested.price, currency: requested.currency, payment_method: 'WHATSAPP', reference: 'WHATSAPP_ADMIN_APPROVED', notes: 'Payment confirmed externally by admin', status: 'VERIFIED', reviewed_at: trx.fn.now(), reviewed_by: admin.id, review_note: note?.trim() || 'Approved after WhatsApp payment confirmation' });
         }
