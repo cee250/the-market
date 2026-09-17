@@ -14,6 +14,9 @@ function ScrollToTop() {
 
 /** App shell: sticky header, routed content, footer. */
 export function Layout() {
+  const { pathname } = useLocation();
+  const isolatedAdmin = pathname.startsWith('/admin') && pathname !== '/admin/login';
+  if (isolatedAdmin) return <div className="min-h-screen bg-slate-950"><ScrollToTop /><Seo /><Outlet /></div>;
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTop />

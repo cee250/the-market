@@ -23,9 +23,12 @@ export class VendorsService {
     const latestAmount = this.db.connection('vendor_payments as latest_amount').select('latest_amount.amount').whereRaw('latest_amount.vendor_profile_id = vp.id').orderBy('latest_amount.submitted_at', 'desc').limit(1);
     const latestCurrency = this.db.connection('vendor_payments as latest_currency').select('latest_currency.currency').whereRaw('latest_currency.vendor_profile_id = vp.id').orderBy('latest_currency.submitted_at', 'desc').limit(1);
     const latestStatus = this.db.connection('vendor_payments as latest_status').select('latest_status.status').whereRaw('latest_status.vendor_profile_id = vp.id').orderBy('latest_status.submitted_at', 'desc').limit(1);
+    const totalProducts = this.db.connection('products as product_count').count('*').whereRaw('product_count.vendor_profile_id = vp.id');
+    const publishedProducts = this.db.connection('products as published_count').count('*').whereRaw("published_count.vendor_profile_id = vp.id AND published_count.status = 'PUBLISHED'");
+    const income = this.db.connection('vendor_orders as income_orders').sum('income_orders.subtotal').join('orders as income_parent', 'income_parent.id', 'income_orders.order_id').whereRaw('income_orders.vendor_profile_id = vp.id').whereNot('income_parent.status', 'CANCELLED');
     const rows = await this.db.connection('vendor_profiles as vp')
       .join('users as u', 'u.id', 'vp.user_id')
-      .select('vp.id', 'vp.user_id', 'vp.business_name', 'vp.slug', 'vp.phone', 'vp.location', 'vp.status', 'vp.created_at', 'vp.updated_at', 'u.name', 'u.email', 'u.email_verified_at', latestAmount.as('latest_payment_amount'), latestCurrency.as('latest_payment_currency'), latestStatus.as('latest_payment_status'))
+      .select('vp.id', 'vp.user_id', 'vp.business_name', 'vp.slug', 'vp.phone', 'vp.location', 'vp.status', 'vp.created_at', 'vp.updated_at', 'u.name', 'u.email', 'u.email_verified_at', latestAmount.as('latest_payment_amount'), latestCurrency.as('latest_payment_currency'), latestStatus.as('latest_payment_status'), totalProducts.as('total_products'), publishedProducts.as('published_products'), income.as('income'))
       .orderBy('vp.created_at', 'desc');
     return rows.map((row) => this.toDto(row));
   }
@@ -47,6 +50,22 @@ export class VendorsService {
     });
     const updated = await this.db.connection('vendor_profiles as vp').join('users as u', 'u.id', 'vp.user_id').where('vp.id', vendorId).select('vp.*', 'u.name', 'u.email', 'u.email_verified_at').first();
     return this.toDto(updated);
+  }
+
+  async remove(admin: AuthUser, vendorId: string) {
+    this.assertAdmin(admin);
+    const vendor = await this.db.connection('vendor_profiles').where({ id: vendorId }).first();
+    if (!vendor) throw new NotFoundException('Vendor not found');
+    if (await this.db.connection('vendor_orders').where({ vendor_profile_id: vendorId }).first()) throw new BadRequestException('This vendor has order history and cannot be deleted. Deactivate it instead.');
+    await this.db.tx(async (trx) => {
+      await trx('vendor_payments').where({ vendor_profile_id: vendorId }).del();
+      await trx('vendor_entitlements').where({ vendor_profile_id: vendorId }).del();
+      await trx('subscriptions').where({ vendor_profile_id: vendorId }).del();
+      await trx('vendor_profiles').where({ id: vendorId }).del();
+      await trx('users').where({ id: vendor.user_id }).del();
+      await trx('audit_logs').insert({ actor_id: admin.id, action: 'VENDOR_DELETE', entity: 'vendor_profile', entity_id: vendorId, metadata: {} });
+    });
+    return { deleted: true, id: vendorId };
   }
 
   private assertAdmin(user: AuthUser) {

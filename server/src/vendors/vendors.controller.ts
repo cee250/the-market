@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 import type { Request } from 'express';
 import { AuthGuard } from '../auth/auth.guard';
@@ -31,5 +31,10 @@ export class VendorsController {
   @Post('admin/:id/action')
   action(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: VendorActionDto) {
     return this.vendors.transition(request.user, id, body.action, body.note);
+  }
+
+  @Delete('admin/:id')
+  remove(@Req() request: RequestWithUser, @Param('id') id: string) {
+    return this.vendors.remove(request.user, id);
   }
 }

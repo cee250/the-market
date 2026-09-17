@@ -32,6 +32,7 @@ const AdminCategoriesPage = lazy(() => import('./pages/AdminCategoriesPage').the
 const VendorInventoryPage = lazy(() => import('./pages/VendorInventoryPage').then((m) => ({ default: m.VendorInventoryPage })));
 const VendorFulfillmentPage = lazy(() => import('./pages/VendorFulfillmentPage').then((m) => ({ default: m.VendorFulfillmentPage })));
 const AdminOperationsPage = lazy(() => import('./pages/AdminOperationsPage').then((m) => ({ default: m.AdminOperationsPage })));
+const AdminControlCenterPage = lazy(() => import('./pages/AdminControlCenterPage').then((m) => ({ default: m.AdminControlCenterPage })));
 const AdminModerationPage = lazy(() => import('./pages/AdminModerationPage').then((m) => ({ default: m.AdminModerationPage })));
 const VendorAnalyticsPage = lazy(() => import('./pages/VendorAnalyticsPage').then((m) => ({ default: m.VendorAnalyticsPage })));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage').then((m) => ({ default: m.NotificationsPage })));
@@ -78,7 +79,7 @@ export default function App() {
             <Route path="/vendor/fulfillment" element={<VendorFulfillmentPage />} />
             <Route path="/vendor/analytics" element={<VendorAnalyticsPage />} />
             <Route path="/admin/operations" element={<AdminOperationsPage />} />
-            <Route path="/admin" element={<AdminOperationsPage />} />
+            <Route path="/admin" element={<AdminControlCenterPage />} />
             <Route path="/admin/moderation" element={<AdminModerationPage />} />
             <Route path="/password-reset" element={<PasswordResetPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
