@@ -1,4 +1,6 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createHash } from 'node:crypto';
 import { AuthUser } from '../auth/auth.service';
 import { DatabaseService } from '../database/database.service';
 import { PackagesService } from '../packages/packages.service';
@@ -9,7 +11,19 @@ type ProductStatus = 'DRAFT' | 'PUBLISHED';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService) {}
+  constructor(private readonly db: DatabaseService, private readonly packages: PackagesService, private readonly config: ConfigService) {}
+  async signCloudinaryUpload(user: AuthUser) {
+    const vendor = await this.vendorFor(user);
+    const cloudName = this.config.get<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.config.get<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.config.get<string>('CLOUDINARY_API_SECRET');
+    if (!cloudName || !apiKey || !apiSecret) throw new ServiceUnavailableException('Cloudinary upload is not configured');
+    const timestamp = Math.floor(Date.now() / 1000);
+    const folder = `market/vendors/${vendor.id}`;
+    const serialized = `folder=${folder}&timestamp=${timestamp}`;
+    const signature = createHash('sha1').update(`${serialized}${apiSecret}`).digest('hex');
+    return { cloudName, apiKey, timestamp, folder, signature, uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload` };
+  }
 
   async mine(user: AuthUser) { const vendor = await this.vendorFor(user); const rows = await this.db.connection('products').where({ vendor_profile_id: vendor.id }).orderBy('created_at', 'desc'); return Promise.all(rows.map((row) => this.toDto(row))); }
 

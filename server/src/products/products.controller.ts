@@ -51,6 +51,7 @@ export class ProductsController {
   constructor(private readonly products: ProductsService) {}
 
   @Get('mine') mine(@Req() request: RequestWithUser) { return this.products.mine(request.user); }
+  @Post('images/sign') signCloudinaryUpload(@Req() request: RequestWithUser) { return this.products.signCloudinaryUpload(request.user); }
   @Post() create(@Req() request: RequestWithUser, @Body() body: ProductDto) { return this.products.create(request.user, body); }
   @Patch(':id') update(@Req() request: RequestWithUser, @Param('id') id: string, @Body() body: ProductUpdateDto) { return this.products.update(request.user, id, body); }
   @Delete(':id') remove(@Req() request: RequestWithUser, @Param('id') id: string) { return this.products.remove(request.user, id); }
