@@ -133,6 +133,7 @@ export class AuthService {
     });
     const session = await this.issueSession(user, request);
     try {
+      await this.mail.sendEmailVerification(user.email, user.name, verification.token);
       await this.mail.sendRegistrationNotification({ name: user.name, email: user.email, role: user.role });
     } catch (error) {
       this.logger.error('Registration email notification failed', error instanceof Error ? error.message : String(error));
@@ -177,6 +178,7 @@ export class AuthService {
     });
     const session = await this.issueSession({ ...user, vendor_status: 'PENDING_PAYMENT' }, request);
     try {
+      await this.mail.sendEmailVerification(user.email, user.name, verification.token);
       await this.mail.sendRegistrationNotification({ name: user.name, email: user.email, role: user.role });
     } catch (error) {
       this.logger.error('Vendor registration email notification failed', error instanceof Error ? error.message : String(error));

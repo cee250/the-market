@@ -11,6 +11,7 @@ const ListingPage = lazy(() => import('./pages/ListingPage').then((m) => ({ defa
 const LoginPage = lazy(() => import('./pages/AuthPages').then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./pages/AuthPages').then((m) => ({ default: m.RegisterPage })));
 const PasswordResetPage = lazy(() => import('./pages/AuthPages').then((m) => ({ default: m.PasswordResetPage })));
+const VerifyEmailPage = lazy(() => import('./pages/AuthPages').then((m) => ({ default: m.VerifyEmailPage })));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 const OrderSuccessPage = lazy(() => import('./pages/OrderSuccessPage').then((m) => ({ default: m.OrderSuccessPage })));
 const OrdersPage = lazy(() => import('./pages/OrdersPage').then((m) => ({ default: m.OrdersPage })));
@@ -58,6 +59,8 @@ export default function App() {
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin/login" element={<LoginPage />} />
+            <Route path="/vendor/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/register/vendor" element={<VendorRegistrationPage />} />
             <Route path="/vendor/payment" element={<VendorPaymentPage />} />
@@ -75,8 +78,10 @@ export default function App() {
             <Route path="/vendor/fulfillment" element={<VendorFulfillmentPage />} />
             <Route path="/vendor/analytics" element={<VendorAnalyticsPage />} />
             <Route path="/admin/operations" element={<AdminOperationsPage />} />
+            <Route path="/admin" element={<AdminOperationsPage />} />
             <Route path="/admin/moderation" element={<AdminModerationPage />} />
             <Route path="/password-reset" element={<PasswordResetPage />} />
+            <Route path="/verify-email" element={<VerifyEmailPage />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

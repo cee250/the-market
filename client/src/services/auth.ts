@@ -34,4 +34,7 @@ export const authApi = {
     if (!response.ok) throw new Error(body.message || 'Unable to reset your password');
     return body as { message: string };
   },
+  async verifyEmail(token: string) {
+    return request<{ message: string }>('/auth/verify-email', { method: 'POST', body: JSON.stringify({ token }) });
+  },
 };

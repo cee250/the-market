@@ -40,6 +40,18 @@ export class MailService {
     });
   }
 
+  async sendEmailVerification(email: string, name: string, token: string): Promise<void> {
+    const baseUrl = (this.config.get<string>('APP_BASE_URL') || 'https://market-rw.netlify.app').replace(/\/$/, '');
+    const verifyUrl = `${baseUrl}/verify-email?token=${encodeURIComponent(token)}`;
+    await this.getTransporter().sendMail({
+      from: this.fromAddress(),
+      to: email,
+      subject: 'Verify your Market email',
+      text: `Hi ${name}, verify your Market email within 24 hours: ${verifyUrl}`,
+      html: `<p>Hi ${name},</p><p><a href="${verifyUrl}">Verify your Market email</a> (valid for 24 hours)</p>`,
+    });
+  }
+
   async sendRegistrationNotification(user: { name: string; email: string; role: string }): Promise<void> {
     const recipient = this.config.get<string>('ADMIN_EMAIL') || this.config.get<string>('SMTP_USER');
     if (!recipient) return;

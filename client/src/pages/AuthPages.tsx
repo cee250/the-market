@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { KeyRound, LogIn, ShoppingBag, UserPlus } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { KeyRound, LogIn, MailCheck, ShoppingBag, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/auth';
 import { useToast } from '../context/ToastContext';
@@ -27,6 +27,7 @@ function AuthShell({ title, subtitle, icon, children }: AuthShellProps) {
 export function LoginPage() {
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect') ?? '/';
+  const location = useLocation();
   const navigate = useNavigate();
   const { login } = useAuth();
   const { toast } = useToast();
@@ -46,7 +47,8 @@ export function LoginPage() {
     try {
       const user = await login(email.trim(), password);
       toast(`Welcome back, ${user.name.split(' ')[0]}!`);
-      navigate(redirect, { replace: true });
+      const destination = location.pathname === '/admin/login' || user.role === 'ADMIN' ? '/admin' : location.pathname === '/vendor/login' || user.role === 'VENDOR' ? (user.vendorStatus === 'ACTIVE' ? '/vendor/dashboard' : user.vendorStatus === 'PENDING_PAYMENT' ? '/vendor/payment' : user.vendorStatus === 'PENDING_APPROVAL' ? '/vendor/entitlement' : '/vendor/subscription') : redirect;
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in');
     } finally { setBusy(false); }
@@ -109,4 +111,10 @@ export function PasswordResetPage() {
     <form onSubmit={submit} className="space-y-4">{token ? <><label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">New password</span><input required minLength={8} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" className={inputClass()} /></label><label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">Confirm password</span><input required minLength={8} type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Repeat password" autoComplete="new-password" className={inputClass()} /></label><button disabled={busy} className="w-full rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-60">{busy ? 'Updating…' : 'Update password'}</button></> : <><label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">Email</span><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" className={inputClass()} /></label><button disabled={busy} className="w-full rounded-lg bg-emerald-600 py-3 text-sm font-semibold text-white disabled:opacity-60">{busy ? 'Sending…' : 'Send reset instructions'}</button></>}</form>
     {message && <p className="mt-4 text-sm text-slate-600">{message}</p>}<p className="mt-5 text-center text-sm"><Link to="/login" className="font-semibold text-emerald-700 hover:underline">Back to sign in</Link></p>
   </AuthShell>;
+}
+
+export function VerifyEmailPage() {
+  const [searchParams] = useSearchParams(); const token = searchParams.get('token') ?? ''; const [message, setMessage] = useState('Verifying your email…'); const [busy, setBusy] = useState(Boolean(token));
+  useEffect(() => { if (!token) { setMessage('This verification link is missing or invalid.'); setBusy(false); return; } void authApi.verifyEmail(token).then((result) => setMessage(result.message)).catch((err) => setMessage(err instanceof Error ? err.message : 'Unable to verify email')).finally(() => setBusy(false)); }, [token]);
+  return <AuthShell title="Verify your email" subtitle="Confirm your email address to keep your Market account secure." icon={<MailCheck size={22} />}><p className="text-sm text-slate-600">{busy ? 'Please wait…' : message}</p><p className="mt-5 text-center text-sm"><Link to="/login" className="font-semibold text-emerald-700 hover:underline">Continue to sign in</Link></p></AuthShell>;
 }
