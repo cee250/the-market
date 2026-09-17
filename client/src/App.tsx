@@ -18,6 +18,7 @@ const OrdersPage = lazy(() => import('./pages/OrdersPage').then((m) => ({ defaul
 const ProductPage = lazy(() => import('./pages/ProductPage').then((m) => ({ default: m.ProductPage })));
 const WishlistPage = lazy(() => import('./pages/WishlistPage').then((m) => ({ default: m.WishlistPage })));
 const VendorRegistrationPage = lazy(() => import('./pages/VendorRegistrationPage').then((m) => ({ default: m.VendorRegistrationPage })));
+const VendorPendingPage = lazy(() => import('./pages/VendorPendingPage').then((m) => ({ default: m.VendorPendingPage })));
 const VendorPaymentPage = lazy(() => import('./pages/VendorPaymentPage').then((m) => ({ default: m.VendorPaymentPage })));
 const AdminPaymentsPage = lazy(() => import('./pages/AdminPaymentsPage').then((m) => ({ default: m.AdminPaymentsPage })));
 const AdminVendorsPage = lazy(() => import('./pages/AdminVendorsPage').then((m) => ({ default: m.AdminVendorsPage })));
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="/vendor/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/register/vendor" element={<VendorRegistrationPage />} />
+            <Route path="/vendor/pending" element={<VendorPendingPage />} />
             <Route path="/vendor/payment" element={<VendorPaymentPage />} />
             <Route path="/admin/payments" element={<AdminPaymentsPage />} />
             <Route path="/admin/vendors" element={<AdminVendorsPage />} />

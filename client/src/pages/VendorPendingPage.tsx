@@ -1,0 +1,12 @@
+import { CheckCircle2, MessageCircle, ShieldCheck } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+
+const WHATSAPP = '250788889077';
+export function VendorPendingPage() {
+  const [params] = useSearchParams();
+  const name = params.get('name') ?? 'Vendor';
+  const email = params.get('email') ?? '';
+  const packageName = params.get('package') ?? 'selected package';
+  const message = encodeURIComponent(`Hello Market, I registered as ${name} (${email}). I selected the ${packageName} package and would like to request payment instructions and admin approval.`);
+  return <div className="mx-auto flex max-w-2xl flex-col px-4 py-12 sm:px-6"><div className="rounded-3xl border border-emerald-100 bg-white p-8 text-center shadow-sm sm:p-12"><span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><CheckCircle2 size={34} /></span><p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-emerald-600">Application received</p><h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Your account is pending approval</h1><p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-slate-500">Thanks, {name}. Your vendor account is not active yet. Send your selected package details to Market on WhatsApp, then our admin team will review payment and activate your account.</p><div className="mt-7 grid gap-3 text-left sm:grid-cols-2"><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-400">Selected package</p><p className="mt-1 font-bold text-slate-900">{packageName}</p></div><div className="rounded-xl bg-slate-50 p-4"><p className="text-xs uppercase tracking-wide text-slate-400">Account state</p><p className="mt-1 font-bold text-amber-700">Waiting for admin approval</p></div></div><a href={`https://wa.me/${WHATSAPP}?text=${message}`} target="_blank" rel="noreferrer" className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#128C7E] px-5 py-3.5 text-sm font-bold text-white transition hover:bg-[#0d7468]"><MessageCircle size={18} /> Request payment & approval on WhatsApp</a><div className="mt-5 flex items-center justify-center gap-2 text-xs text-slate-500"><ShieldCheck size={15} className="text-emerald-600" /> Admin activation is required before vendor login works.</div><Link to="/" className="mt-8 inline-block text-sm font-semibold text-emerald-700 hover:underline">Return to Market</Link></div></div>;
+}

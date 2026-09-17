@@ -169,7 +169,7 @@ export class AuthService {
     const [user, verification] = await this.db.tx(async (trx) => {
       let slug = slugBase;
       for (let suffix = 2; await trx('vendor_profiles').where({ slug }).first(); suffix += 1) slug = `${slugBase}-${suffix}`;
-      const [createdUser] = (await trx('users').insert({ name: input.name.trim(), email: normalizedEmail, password_hash: passwordHash, role: 'VENDOR', is_active: true }).returning('*')) as UserRow[];
+      const [createdUser] = (await trx('users').insert({ name: input.name.trim(), email: normalizedEmail, password_hash: passwordHash, role: 'VENDOR', is_active: false }).returning('*')) as UserRow[];
       await trx('vendor_profiles').insert({ user_id: createdUser.id, business_name: input.businessName.trim(), slug, phone: input.phone.trim(), location: input.location.trim(), status: 'PENDING_PAYMENT' });
       await trx('terms_acceptances').insert({ user_id: createdUser.id, terms_version: input.termsVersion.trim(), ip_address: request?.ip, user_agent: request?.headers['user-agent'] });
       const token = this.createToken(VERIFICATION_HOURS * 60 * 60 * 1000);

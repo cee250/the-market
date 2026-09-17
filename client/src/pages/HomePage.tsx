@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Carousel, CarouselItem } from '../components/product/Carousel';
 import { CategoryGrid } from '../components/product/CategoryGrid';
-import { FeatureStrip } from '../components/product/FeatureStrip';
 import { HeroCarousel } from '../components/product/HeroCarousel';
 import { PromoTiles } from '../components/product/PromoTiles';
 import { PromoBanner } from '../components/product/PromoBanner';
@@ -101,9 +100,6 @@ export function HomePage() {
         <SellerBanner />
       </div>
 
-      <div className="mt-14">
-        <FeatureStrip />
-      </div>
       <div className="h-8" />
     </>
   );

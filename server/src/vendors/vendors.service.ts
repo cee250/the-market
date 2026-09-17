@@ -45,6 +45,7 @@ export class VendorsService {
 
     await this.db.tx(async (trx) => {
       await trx('vendor_profiles').where({ id: vendorId }).update({ status: rule.to, updated_at: trx.fn.now() });
+      if (rule.to === 'ACTIVE') await trx('users').where({ id: vendor.user_id }).update({ is_active: true });
       if (rule.to === 'ACTIVE') await this.packages.activateEntitlement(trx, vendorId, admin.id);
       if (rule.to === 'ACTIVE') await this.subscriptions.activateForVendor(trx, vendorId, admin.id);
       if (rule.to === 'DEACTIVATED') await this.packages.deactivateEntitlement(trx, vendorId, admin.id);
