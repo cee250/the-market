@@ -21,7 +21,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       client: 'pg',
       connection: {
         connectionString: url,
-        ssl: { rejectUnauthorized: false },
+        ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false },
         connectionTimeoutMillis: 10_000,
         statement_timeout: 10_000,
       },

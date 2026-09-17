@@ -51,6 +51,7 @@ jobs:
         env:
           E2E_SKIP_DB: '1'
           E2E_DATABASE_URL: postgresql://market:market@127.0.0.1:5433/market
+          DATABASE_SSL: 'false'
           ADMIN_EMAIL: admin@market.rw
           ADMIN_PASSWORD: ci-only-admin-password-2026!
       - run: docker build --file server/Dockerfile --tag market-api:ci .
