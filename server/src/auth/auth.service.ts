@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { Request } from 'express';
 import { DatabaseService } from '../database/database.service';
+import { MailService } from './mail.service';
 
 const SESSION_COOKIE = 'market_session';
 const SESSION_DAYS = 30;
@@ -45,9 +47,12 @@ interface TokenResult {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly db: DatabaseService,
     private readonly config: ConfigService,
+    private readonly mail: MailService,
   ) {}
 
   private normalizeEmail(email: string): string {
@@ -127,6 +132,11 @@ export class AuthService {
       expires_at: verification.expiresAt,
     });
     const session = await this.issueSession(user, request);
+    try {
+      await this.mail.sendRegistrationNotification({ name: user.name, email: user.email, role: user.role });
+    } catch (error) {
+      this.logger.error('Registration email notification failed', error instanceof Error ? error.message : String(error));
+    }
     return {
       ...session,
       verificationToken: this.exposeDevToken(verification.token),
@@ -166,6 +176,11 @@ export class AuthService {
       return [createdUser, token] as const;
     });
     const session = await this.issueSession({ ...user, vendor_status: 'PENDING_PAYMENT' }, request);
+    try {
+      await this.mail.sendRegistrationNotification({ name: user.name, email: user.email, role: user.role });
+    } catch (error) {
+      this.logger.error('Vendor registration email notification failed', error instanceof Error ? error.message : String(error));
+    }
     return { ...session, verificationToken: this.exposeDevToken(verification.token) };
   }
 
@@ -215,6 +230,11 @@ export class AuthService {
       await this.db.connection('password_reset_tokens').where({ user_id: user.id }).whereNull('used_at').update({ used_at: this.db.connection.fn.now() });
       const reset = this.createToken(RESET_MINUTES * 60 * 1000);
       await this.db.connection('password_reset_tokens').insert({ user_id: user.id, token_hash: reset.tokenHash, expires_at: reset.expiresAt });
+      try {
+        await this.mail.sendPasswordReset(user.email, reset.token);
+      } catch (error) {
+        this.logger.error('Password reset email delivery failed', error instanceof Error ? error.message : String(error));
+      }
       return { resetToken: this.exposeDevToken(reset.token) };
     }
     return { resetToken: undefined };

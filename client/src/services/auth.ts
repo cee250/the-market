@@ -8,20 +8,30 @@ function accounts(): DemoAccount[] { try { return JSON.parse(window.localStorage
 function saveAccounts(value: DemoAccount[]) { try { window.localStorage.setItem(ACCOUNT_KEY, JSON.stringify(value)); } catch { /* unavailable */ } }
 function session(): User | null { try { return JSON.parse(window.localStorage.getItem(SESSION_KEY) ?? 'null') as User | null; } catch { return null; } }
 function saveSession(user: User | null) { try { if (user) window.localStorage.setItem(SESSION_KEY, JSON.stringify(user)); else window.localStorage.removeItem(SESSION_KEY); } catch { /* unavailable */ } }
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> { const response = await fetch(`/api${path}`, { ...init, credentials: 'include', headers: { 'Content-Type': 'application/json', ...(init.headers || {}) } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(Array.isArray(body.message) ? body.message.join(', ') : body.message || 'Request failed'); return body as T; }
 
 export const authApi = {
   async register(name: string, email: string, password: string): Promise<AuthResponse> {
-    const existing = accounts(); if (existing.some((account) => account.user.email.toLowerCase() === email.toLowerCase())) throw new Error('An account with this email already exists.');
-    const user: User = { id: `demo-user-${Date.now()}`, name, email, role: 'CUSTOMER', emailVerified: true }; saveAccounts([...existing, { user, password }]); saveSession(user); return { user };
+    return request<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password }) });
   },
   async registerVendor(input: { name: string; businessName: string; email: string; phone: string; location: string; password: string; confirmPassword: string; termsVersion: string }): Promise<AuthResponse> {
-    const result = await this.register(input.name, input.email, input.password); const user = { ...result.user, role: 'VENDOR' as const, vendorStatus: 'PENDING_APPROVAL' as const }; const next = accounts().map((account) => account.user.id === user.id ? { ...account, user } : account); saveAccounts(next); saveSession(user); return { user, verificationToken: 'demo-verification' };
+    return request<AuthResponse>('/auth/register/vendor', { method: 'POST', body: JSON.stringify(input) });
   },
   async login(email: string, password: string): Promise<AuthResponse> {
-    if (email.toLowerCase() === 'admin@market.demo' && password === 'admin123') { const user: User = { id: 'demo-admin', name: 'Market Admin', email, role: 'ADMIN', emailVerified: true }; saveSession(user); return { user }; }
-    const account = accounts().find((entry) => entry.user.email.toLowerCase() === email.toLowerCase()); if (!account) throw new Error('No demo account found. Create an account first.'); if (account.password !== password) throw new Error('Incorrect password.'); saveSession(account.user); return { user: account.user };
+    return request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
   },
-  async me(): Promise<AuthResponse> { const user = session(); if (!user) throw new Error('Not signed in'); return { user }; },
-  async logout(): Promise<void> { saveSession(null); },
-  async requestPasswordReset(_email: string) { return { message: 'Demo mode: password reset instructions are not sent, but your storefront is ready to explore.' }; },
+  async me(): Promise<AuthResponse> { return request<AuthResponse>('/auth/me'); },
+  async logout(): Promise<void> { await request<unknown>('/auth/logout', { method: 'POST' }); },
+  async requestPasswordReset(email: string) {
+    const response = await fetch('/api/auth/password-reset/request', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || 'Unable to request a password reset');
+    return body as { message: string };
+  },
+  async resetPassword(token: string, password: string) {
+    const response = await fetch('/api/auth/password-reset/confirm', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password }) });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || 'Unable to reset your password');
+    return body as { message: string };
+  },
 };
