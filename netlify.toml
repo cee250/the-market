@@ -1,5 +1,5 @@
 [build]
-  command = "npm install --include=dev --workspaces && npm run build -w client"
+  command = "npm install --include=dev --workspaces && npm run build -w server && npm run build -w client"
   publish = "client/dist"
 
 [build.environment]
