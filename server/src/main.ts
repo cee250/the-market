@@ -3,11 +3,12 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { randomUUID } from 'node:crypto';
+import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 export async function createApp() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   const config = app.get(ConfigService);
   const isProduction = config.get<string>('NODE_ENV') === 'production';
   const runningInNetlify = Boolean(process.env.NETLIFY || process.env.NETLIFY_FUNCTION_NAME);
@@ -18,6 +19,8 @@ export async function createApp() {
 
   const httpAdapter = app.getHttpAdapter().getInstance();
   httpAdapter.disable('x-powered-by');
+  httpAdapter.use(express.json({ limit: '1mb' }));
+  httpAdapter.use(express.urlencoded({ extended: true }));
   httpAdapter.use((request: Request, _response: Response, next: NextFunction) => {
     if (typeof request.body === 'string') {
       try {
