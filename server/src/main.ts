@@ -18,6 +18,19 @@ export async function createApp() {
 
   const httpAdapter = app.getHttpAdapter().getInstance();
   httpAdapter.disable('x-powered-by');
+  if (runningInNetlify) {
+    httpAdapter.use((request: Request, _response: Response, next: NextFunction) => {
+      const raw = request.body;
+      try {
+        if (Buffer.isBuffer(raw)) request.body = JSON.parse(raw.toString('utf8')) as unknown;
+        else if (typeof raw === 'string') request.body = JSON.parse(raw) as unknown;
+        else if (Array.isArray(raw) && raw.every((part) => typeof part === 'string')) request.body = JSON.parse(raw.join('')) as unknown;
+      } catch {
+        // Leave malformed bodies for validation to reject.
+      }
+      next();
+    });
+  }
   httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('X-Frame-Options', 'DENY');

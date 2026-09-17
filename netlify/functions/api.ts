@@ -36,6 +36,10 @@ export const handler = async (
     requestEvent.path = stripFunctionPrefix(requestEvent.path);
     requestEvent.rawPath = stripFunctionPrefix(requestEvent.rawPath);
     requestEvent.requestPath = stripFunctionPrefix(requestEvent.requestPath);
+    if (requestEvent.isBase64Encoded && typeof requestEvent.body === 'string') {
+      requestEvent.body = Buffer.from(requestEvent.body, 'base64').toString('utf8');
+      requestEvent.isBase64Encoded = false;
+    }
     if (typeof requestEvent.body === 'string') {
       try {
         requestEvent.body = JSON.parse(requestEvent.body) as typeof requestEvent.body;
