@@ -48,6 +48,15 @@ export const handler = async (
       } catch {
         // Leave malformed bodies untouched for the normal validation path.
       }
+    } else if (requestEvent.body && typeof requestEvent.body === 'object' && !Buffer.isBuffer(requestEvent.body)) {
+      const entries = Object.entries(requestEvent.body);
+      if (entries.length > 0 && entries.every(([key, value]) => /^\d+$/.test(key) && typeof value === 'string')) {
+        try {
+          requestEvent.body = JSON.parse(entries.sort(([a], [b]) => Number(a) - Number(b)).map(([, value]) => value).join('')) as typeof requestEvent.body;
+        } catch {
+          // Leave malformed bodies untouched for the normal validation path.
+        }
+      }
     }
     if (requestEvent.body && typeof requestEvent.body === 'string') {
       const headers = Object.fromEntries(

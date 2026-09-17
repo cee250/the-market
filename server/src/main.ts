@@ -3,15 +3,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { randomUUID } from 'node:crypto';
-import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 
 export async function createApp() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const runningInNetlify = Boolean(process.env.NETLIFY || process.env.NETLIFY_FUNCTION_NAME);
+  const app = await NestFactory.create(AppModule, { bodyParser: !runningInNetlify });
   const config = app.get(ConfigService);
   const isProduction = config.get<string>('NODE_ENV') === 'production';
-  const runningInNetlify = Boolean(process.env.NETLIFY || process.env.NETLIFY_FUNCTION_NAME);
 
   // Standalone deployments expose /api; the Netlify redirect strips /api before
   // invoking the function, so the function must mount controllers at root.
@@ -19,25 +18,6 @@ export async function createApp() {
 
   const httpAdapter = app.getHttpAdapter().getInstance();
   httpAdapter.disable('x-powered-by');
-  httpAdapter.use(express.json({ limit: '1mb' }));
-  httpAdapter.use(express.urlencoded({ extended: true }));
-  httpAdapter.use((request: Request, _response: Response, next: NextFunction) => {
-    if (typeof request.body === 'string') {
-      try {
-        request.body = JSON.parse(request.body) as unknown;
-      } catch {
-        // Leave malformed bodies for the normal validation pipeline to reject.
-      }
-    }
-    if (Array.isArray(request.body) && request.body.every((part) => typeof part === 'string')) {
-      try {
-        request.body = JSON.parse(request.body.join('')) as unknown;
-      } catch {
-        // Leave malformed bodies for the normal validation pipeline to reject.
-      }
-    }
-    next();
-  });
   httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('X-Frame-Options', 'DENY');
