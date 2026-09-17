@@ -18,6 +18,16 @@ export async function createApp() {
 
   const httpAdapter = app.getHttpAdapter().getInstance();
   httpAdapter.disable('x-powered-by');
+  httpAdapter.use((request: Request, _response: Response, next: NextFunction) => {
+    if (typeof request.body === 'string') {
+      try {
+        request.body = JSON.parse(request.body) as unknown;
+      } catch {
+        // Leave malformed bodies for the normal validation pipeline to reject.
+      }
+    }
+    next();
+  });
   httpAdapter.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('X-Frame-Options', 'DENY');
