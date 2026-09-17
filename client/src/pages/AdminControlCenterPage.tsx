@@ -6,7 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { adminApi, type AdminStats } from '../services/admin';
 import { vendorsApi, type ManagedVendor } from '../services/vendors';
 
-const money = (value: number) => `${value.toLocaleString()} RWF`;
+const money = (value?: number | null) => `${(value ?? 0).toLocaleString()} RWF`;
 const statusStyles: Record<string, string> = { ACTIVE: 'bg-emerald-50 text-emerald-700', PENDING_PAYMENT: 'bg-amber-50 text-amber-700', PENDING_APPROVAL: 'bg-blue-50 text-blue-700', SUSPENDED: 'bg-rose-50 text-rose-700', DEACTIVATED: 'bg-slate-100 text-slate-600', EXPIRED: 'bg-orange-50 text-orange-700' };
 const actionsFor = (status: string) => status === 'PENDING_APPROVAL' ? ['ACTIVATE', 'DEACTIVATE'] : status === 'ACTIVE' || status === 'EXPIRING_SOON' || status === 'EXPIRED' ? ['SUSPEND', 'DEACTIVATE'] : status === 'SUSPENDED' || status === 'DEACTIVATED' ? ['REACTIVATE'] : ['DEACTIVATE'];
 
