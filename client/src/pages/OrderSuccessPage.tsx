@@ -1,14 +1,14 @@
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, Check, CreditCard, MapPin, PackageX } from 'lucide-react';
 import { EmptyState } from '../components/ui/EmptyState';
-import { getOrder, ordersApi } from '../services/orders';
+import { ordersApi } from '../services/orders';
 import { formatPrice } from '../lib/utils';
 import { useAsync } from '../hooks/useAsync';
 import type { Order } from '../types';
 interface ServerOrder { id: string; order_number?: string; created_at?: string; subtotal?: number; delivery_fee?: number; total: number; status?: string; customer_name?: string; phone?: string; email?: string; delivery_address?: string; payment_method?: string; order_items?: { id: string; product_name: string; quantity: number; unit_price: number }[]; vendorOrders?: { items?: { id: string; product_name: string; quantity: number; unit_price: number }[] }[]; }
 const normalize = (o: ServerOrder): Order => { const items = o.order_items ?? o.vendorOrders?.flatMap((vendor) => vendor.items ?? []) ?? []; return { id: o.order_number ?? o.id, items: items.map((i) => ({ id: i.id, name: i.product_name, image: 'https://placehold.co/80x80?text=Market', price: i.unit_price, qty: i.quantity })), subtotal: o.subtotal ?? o.total, discount: 0, shipping: o.delivery_fee ?? 0, total: o.total, customer: { name: o.customer_name ?? '', phone: o.phone ?? '', email: o.email ?? '', address: o.delivery_address ?? '', city: '' }, paymentMethod: (o.payment_method as Order['paymentMethod']) ?? 'mtn-momo', createdAt: o.created_at ?? new Date().toISOString(), status: (o.status ?? 'PENDING_PAYMENT').replaceAll('_', ' ').toLowerCase() }; };
 export function OrderSuccessPage() {
-  const { orderId } = useParams(); const local = getOrder(orderId ?? ''); const request = useAsync(async () => { if (local) return local; const found = await ordersApi.order(orderId ?? '') as ServerOrder; return found ? normalize(found) : undefined; }, [orderId, local?.id]); const order = request.data;
+  const { orderId } = useParams(); const request = useAsync(async () => normalize(await ordersApi.order(orderId ?? '') as unknown as ServerOrder), [orderId]); const order = request.data;
   if (request.loading) return <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6"><div className="h-64 animate-pulse rounded-2xl bg-slate-100" /></div>;
   if (!order) return <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6"><EmptyState icon={PackageX} title="Order not found" text="We couldn't find that order. It may have been placed in a different browser." action={{ label: 'Back to home', to: '/' }} /></div>;
   const firstName = order.customer.name.split(' ')[0] || 'there'; const date = new Date(order.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });

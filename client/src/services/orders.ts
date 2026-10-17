@@ -1,18 +1,42 @@
-import type { Order } from '../types';
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 
-export interface CartItem { id: string; productId: string; productName: string; productSlug: string; vendorId: string; vendorName: string; variantId?: string; variantSku?: string; quantity: number; unitPrice: number; subtotal: number; currency: string; selectedOptions: Record<string, unknown> }
+export interface CartItem {
+  id: string;
+  productId: string;
+  productName: string;
+  productSlug: string;
+  vendorId: string;
+  vendorName: string;
+  variantId?: string;
+  variantSku?: string;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  currency: string;
+  selectedOptions: Record<string, unknown>;
+}
 export interface Cart { id: string; items: CartItem[]; subtotal: number }
-const KEY = 'market.orders.v1';
-export function getOrders(): Order[] { try { return JSON.parse(window.localStorage.getItem(KEY) ?? '[]') as Order[]; } catch { return []; } }
-export function getOrder(id: string): Order | undefined { return getOrders().find((o) => o.id === id); }
-export function saveOrder(order: Order): void { const all = getOrders(); all.unshift(order); try { window.localStorage.setItem(KEY, JSON.stringify(all)); } catch { /* unavailable */ } }
+
+async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${API_URL}/api${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(init.headers ?? {}) },
+  });
+  const body = await response.json().catch(() => null) as { message?: string | string[] } | T | null;
+  if (!response.ok) {
+    const message = body && typeof body === 'object' && 'message' in body ? body.message : undefined;
+    throw new Error(Array.isArray(message) ? message.join(', ') : message || 'Unable to complete the order request');
+  }
+  return body as T;
+}
 
 export const ordersApi = {
-  async cart(): Promise<Cart> { return { id: 'demo-cart', items: [], subtotal: 0 }; },
-  async add(): Promise<Cart> { return { id: 'demo-cart', items: [], subtotal: 0 }; },
-  async update(): Promise<Cart> { return { id: 'demo-cart', items: [], subtotal: 0 }; },
-  async remove(): Promise<Cart> { return { id: 'demo-cart', items: [], subtotal: 0 }; },
-  async checkout(_input: { customerName: string; phone: string; email: string; deliveryAddress: string; fulfillmentMethod: 'DELIVERY' | 'PICKUP'; paymentMethod: string }, _idempotencyKey?: string) { return { id: `MK-${Date.now().toString(36).toUpperCase()}` }; },
-  async orders(): Promise<Order[]> { return getOrders(); },
-  async order(id: string): Promise<Order> { const order = getOrder(id); if (!order) throw new Error('Order not found'); return order; },
+  cart: () => request<Cart>('/cart'),
+  add: (productId: string, quantity: number, variantId?: string, selectedOptions?: Record<string, unknown>) => request<Cart>('/cart/items', { method: 'POST', body: JSON.stringify({ productId, quantity, variantId, selectedOptions }) }),
+  update: (itemId: string, quantity: number) => request<Cart>(`/cart/items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: JSON.stringify({ quantity }) }),
+  remove: (itemId: string) => request<Cart>(`/cart/items/${encodeURIComponent(itemId)}`, { method: 'DELETE' }),
+  checkout: (input: { customerName: string; phone: string; email: string; deliveryAddress: string; fulfillmentMethod: 'DELIVERY' | 'PICKUP'; paymentMethod: string }, idempotencyKey?: string) => request<Record<string, unknown>>('/checkout', { method: 'POST', headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : undefined, body: JSON.stringify(input) }),
+  orders: () => request<Record<string, unknown>[]>('/orders'),
+  order: (id: string) => request<Record<string, unknown>>(`/orders/${encodeURIComponent(id)}`),
 };

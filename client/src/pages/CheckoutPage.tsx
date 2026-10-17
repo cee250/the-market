@@ -12,8 +12,8 @@ import {
 import { CITIES, SITE } from '../config/site';
 import { useCart } from '../context/CartContext';
 import { cx, formatPrice } from '../lib/utils';
-import { ordersApi, saveOrder } from '../services/orders';
-import type { Order, OrderItem, PaymentMethod } from '../types';
+import { ordersApi } from '../services/orders';
+import type { PaymentMethod } from '../types';
 
 type Step = 1 | 2 | 3;
 
@@ -129,33 +129,6 @@ export function CheckoutPage() {
       const result = await ordersApi.checkout({ customerName: form.name.trim(), phone: form.phone.trim(), email: form.email.trim(), deliveryAddress: `${form.address.trim()}, ${form.city}`, fulfillmentMethod: 'DELIVERY', paymentMethod: method }, idempotencyKey) as { id?: string; order_number?: string };
       const orderId = result.id ?? result.order_number;
       if (!orderId) throw new Error('The order was created without an identifier.');
-    const items: OrderItem[] = cart.items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      image: i.image,
-      price: i.price,
-      qty: i.qty,
-    }));
-    const order: Order = {
-      id: `MK-${Date.now().toString(36).toUpperCase()}`,
-      items,
-      subtotal: cart.totals.subtotal,
-      discount: cart.totals.discount,
-      shipping: cart.totals.shipping,
-      total: cart.totals.total,
-      customer: {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-        address: form.address.trim(),
-        city: form.city,
-        notes: form.notes.trim() || undefined,
-      },
-      paymentMethod: method,
-      createdAt: new Date().toISOString(),
-      status: 'confirmed',
-    };
-      saveOrder({ ...order, id: String(orderId) });
       cart.clear();
       navigate(`/order-success/${orderId}`);
     } catch (error) {
