@@ -8,8 +8,8 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { ProductGridSkeleton } from '../components/ui/Skeletons';
 import { useAsync } from '../hooks/useAsync';
 import { api, type SortKey } from '../services/api';
-import { demoSubcategories } from '../services/demoData';
 import { cx } from '../lib/utils';
+import type { Category } from '../types';
 
 const PAGE_SIZE = 12;
 
@@ -43,7 +43,7 @@ function FiltersPanel({
   filters: LocalFilters;
   setFilters: (f: LocalFilters) => void;
   activeCategory?: string;
-  categories: { slug: string; shortName: string }[];
+  categories: Category[];
 }) {
   const navigate = useNavigate();
 
@@ -84,10 +84,10 @@ function FiltersPanel({
                     : 'text-slate-600 hover:bg-slate-50',
                 )}
               >
-                {c.shortName}
+                {c.shortName ?? c.name}
               </button>
               <div className="ml-5 mt-1 flex flex-wrap gap-1">
-                {(demoSubcategories[c.slug] ?? []).map((subcategory) => (
+                {(c.subcategories ?? []).map((subcategory) => (
                   <button key={subcategory.slug} type="button" onClick={() => navigate(`/category/${c.slug}?subcategory=${subcategory.slug}`)} className="rounded-full px-2 py-1 text-[11px] text-slate-400 transition hover:bg-emerald-50 hover:text-emerald-700">
                     {subcategory.name}
                   </button>
@@ -244,7 +244,7 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
     ? [
         { label: 'Home', to: '/' },
         { label: 'Shop', to: '/shop' },
-        { label: category.shortName },
+        { label: category.shortName ?? category.name },
       ]
     : q
       ? [
@@ -272,7 +272,7 @@ export function ListingPage({ mode }: { mode: 'shop' | 'category' | 'search' }) 
             <h1 className="text-2xl font-extrabold text-white sm:text-3xl">{category.name}</h1>
             <p className="mt-1 max-w-md text-sm text-white/80">{category.description}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {(demoSubcategories[category.slug] ?? []).map((subcategory) => (
+              {(category.subcategories ?? []).map((subcategory) => (
                 <Link key={subcategory.slug} to={`/category/${category.slug}?subcategory=${subcategory.slug}`} className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25">
                   {subcategory.name}
                 </Link>

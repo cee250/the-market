@@ -7,11 +7,13 @@
 export type ProductTag = 'featured' | 'latest' | 'best-seller' | 'new';
 
 export interface Category {
+  id?: string;
   slug: string;
   name: string;
-  shortName: string;
+  shortName?: string;
   description: string;
   image: string;
+  subcategories?: { id: string; name: string; slug: string }[];
 }
 
 export interface ProductSpec {
@@ -37,6 +39,11 @@ export interface Product {
   tags: ProductTag[];
   /** ISO date used for "newest" sorting. */
   createdAt: string;
+  sku?: string;
+  vendorName?: string;
+  vendorSlug?: string;
+  images?: { id: string; url: string; sortOrder: number; isCover: boolean }[];
+  variants?: { id: string; sku: string; price?: number | null; stock: number; availability: string; isActive: boolean; color?: string | null; size?: string | null; storage?: string | null; model?: string | null }[];
 }
 
 export interface CartItem {
